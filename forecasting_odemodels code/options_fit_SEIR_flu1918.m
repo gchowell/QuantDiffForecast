@@ -80,6 +80,7 @@ params.fixed=[0 1 1 1]; % Boolean vector to indicate any parameters that should 
 params.fixI0=1; % Boolean variable indicating if the initial value of the fitting variable is fixed according to the first observation in the time series (1). Otherwise, it will be estimated along with other parameters (0).
 params.composite=@R0s;  % Estimate a composite function of the individual model parameter estimates otherwise it is left empty.
 params.composite_name='R_0'; % Name of the composite parameter
+params.extra0=[]; % used to pass pass any extra parameters (e.g., data, static variables) to the model function
 
 vars.num=5; % number of variables comprising the ODE model
 vars.label={'S','E','I','R','C'}; % list of symbols to refer to the variables included in the model
@@ -97,4 +98,4 @@ tstart1=1; % time point for the start of rolling window analysis
 
 tend1=1;  %time point for the end of the rolling window analysis
 
-printscreen1=0;
+printscreen1=1;
