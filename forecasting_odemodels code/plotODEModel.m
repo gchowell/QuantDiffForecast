@@ -136,7 +136,7 @@ for j=1:M
     composite1=[composite1;params.composite(param1')];
 
 
-    [~,F]=ode15s(model.fc,timevect,IC,options,param1);
+    [~,F]=ode15s(model.fc,timevect,IC,options,param1,params.extra0);
 
     if vars.fit_diff==1
         fitcurve=abs([F(1,vars.fit_index);diff(F(:,vars.fit_index))]);
@@ -236,7 +236,7 @@ if 0
     factor1=1;
     d=1;
 
-    [~,F]=ode15s(model.fc,timevect,IC,options,params.initial);
+    [~,F]=ode15s(model.fc,timevect,IC,options,params.initial,params.extra0);
     if vars.fit_diff==1
         fitcurve=abs([F(1,vars.fit_index);diff(F(:,vars.fit_index))]);
     else

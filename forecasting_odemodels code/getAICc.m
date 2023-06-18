@@ -2,7 +2,6 @@ function [AICc,part1,part2,numparams]=getAICc(method1,dist1,params_num,fixI0,fva
   
 numparams=params_num;
 
-
 if fixI0==0 %fix initial datum or estimated
     
     numparams=numparams+1;

@@ -2,7 +2,7 @@
 % < Author: Gerardo Chowell  ==================================================>
 % <============================================================================>
 
-function dx=SEIR1(t,x,params0)
+function dx=SEIR1(t,x,params0,extra0)
 
 %  params0(1) = beta, params0(2)=k,  params0(3)=gamma, params0(4)=N
 

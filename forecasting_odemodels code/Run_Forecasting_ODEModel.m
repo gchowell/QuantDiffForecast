@@ -229,7 +229,7 @@ for i=tstart1:1:tend1  %rolling window analysis
     %     pause
 
 
-    [AICc,part1,part2,numparams]=getAICc(method1,dist1,params.num,params.fixI0,fval,length(data1(:,1)))
+    [AICc,part1,part2,numparams]=getAICc(method1,dist1,sum(params.fixed==0),params.fixI0,fval,length(data1(:,1)))
 
     AICcs=[AICcs;[i AICc part1 part2 numparams]];
 

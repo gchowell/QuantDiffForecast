@@ -61,7 +61,7 @@ if params.fixI0==1
 else
 
     LB=[params.LB 0 LBe];
-    UB=[params.UB sum(data1(:,2)) UBe];
+    UB=[params.UB sum(abs(data1(:,2))) UBe];
 
 end
 
@@ -166,7 +166,7 @@ else
     IC(vars.fit_index)=P(params.num+1);
 end
 
-[~,F]=ode15s(model.fc,timevect,IC,options,P);
+[~,F]=ode15s(model.fc,timevect,IC,options,P,params.extra0);
 
 if vars.fit_diff==1
     fitcurve=abs([F(1,vars.fit_index);diff(F(:,vars.fit_index))]);
@@ -186,7 +186,7 @@ if forecastingperiod<1
 else
     timevect2=(data1(1,1):data1(end,1)+forecastingperiod)*DT;
 
-    [~,F]=ode15s(model.fc,timevect2,IC,options,P);
+    [~,F]=ode15s(model.fc,timevect2,IC,options,P,params.extra0);
 
     if vars.fit_diff==1
         forecastcurve=abs([F(1,vars.fit_index);diff(F(:,vars.fit_index))]);
