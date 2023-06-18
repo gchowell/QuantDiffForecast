@@ -19,7 +19,7 @@ global method1 % Parameter estimation method
 % The first column corresponds to time index: 0,1,2, ... and the second
 % column corresponds to the observed time series data.
 
-cadfilename1='curve-flu1918SF'; % Name of the data file (without extension) containing the incidence curve
+cadfilename1='curve-flu1918SF'
 
 caddisease='1918 Flu'; % string indicating the name of the disease related to the time series data
 
@@ -36,7 +36,6 @@ method1=3; % Type of estimation method
 % MLE (Neg Binomial)=3, with VAR=mean+alpha*mean;
 % MLE (Neg Binomial)=4, with VAR=mean+alpha*mean^2;
 % MLE (Neg Binomial)=5, with VAR=mean+alpha*mean^d;
-
 
 dist1=3; % Define dist1 which is the type of error structure. See below:
 
@@ -69,24 +68,24 @@ B=300; % number of bootstrap realizations to characterize parameter uncertainty
 % <==============================================================================>
 % <============================== ODE model =====================================>
 % <==============================================================================>
-model.fc=@SEIR1; % name of the model function
-model.name='SEIR model';   % string indicating the name of the ODE model
 
-params.num=4; % number of model parameters
-params.label={'\beta','\kappa','\gamma','N'};  % list of symbols to refer to the model parameters
-params.LB=[0 0 0 20]; % lower bound values of the parameter estimates
-params.UB=[10 2 2 1000000]; % upper bound values of the parameter estimates
-params.initial=[0.6 1/1.9 1/4.1 550000]; % initial parameter values/guesses
-params.fixed=[0 1 1 1]; % Boolean vector to indicate any parameters that should remain fixed (1) to initial values indicated in params.initial. Otherwise the parameter is estimated (0).
-params.fixI0=1; % Boolean variable indicating if the initial value of the fitting variable is fixed according to the first observation in the time series (1). Otherwise, it will be estimated along with other parameters (0).
-params.composite=@R0s;  % Estimate a composite function of the individual model parameter estimates otherwise it is left empty.
-params.composite_name='R_0'; % Name of the composite parameter
-params.extra0=[];
+model.fc=@EXP;  % name of the model function
+model.name='EXP model'; % string indicating the name of the ODE model
 
-vars.num=5; % number of variables comprising the ODE model
-vars.label={'S','E','I','R','C'}; % list of symbols to refer to the variables included in the model
-vars.initial=[params.initial(4)-4 0 4 0 4];  % vector of initial conditions for the model variables
-vars.fit_index=5; % index of the model's variable that will be fit to the observed time series data
+params.num=1; % number of model parameters
+params.label={'r'}; % list of symbols to refer to the model parameters
+params.LB=[0];  % lower bound values of the parameter estimates
+params.UB=[10]; % upper bound values of the parameter estimates
+params.initial=[0.18]; % initial parameter values/guesses
+params.fixed=[0]; % Boolean vector to indicate any parameters that should remain fixed (1) to initial values indicated in params.initial. Otherwise the parameter is estimated (0).
+params.fixI0=1; % Boolean variable indicating if the initial value of the fitting variable is fixed according to the first observation in the time series (1). Otherwise, it will be estimated along with other parameters.
+params.composite='';  % Estimate a composite function of the individual model parameter estimates otherwise it is left empty.
+params.extra0=[]; % used to pass pass any extra parameters (e.g., data, static variables) to the model function
+
+vars.num=1; % number of variables comprising the ODE model
+vars.label={'C'}; % list of symbols to refer to the variables included in the model
+vars.initial=5; % vector of initial conditions for the model variables
+vars.fit_index=1; % index of the model's variable that will be fit to the observed time series data
 vars.fit_diff=1; % boolean variable to indicate if the derivative of model's fitting variable should be fit to data.
 
 % <==============================================================================>
@@ -107,4 +106,4 @@ tstart1=1; % time point for the start of rolling window analysis
 
 tend1=1;  %time point for the end of the rolling window analysis
 
-printscreen1=0;
+printscreen1=0; % print outputs to screen (1) or not (0)
