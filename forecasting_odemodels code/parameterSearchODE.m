@@ -10,7 +10,7 @@ IC=vars.initial;
 
 IC(vars.fit_index)=I0;
 
-[~,x]=ode15s(model.fc,timevect,IC,[],z);
+[~,x]=ode15s(model.fc,timevect,IC,[],z,params.extra0);
 
 %[t,x]=ode15s(@modifiedLogisticGrowth,timevect,IC,[],r,p,a,K,flag1);
 
