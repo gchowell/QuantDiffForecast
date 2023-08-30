@@ -331,7 +331,17 @@ for i=tstart1:1:tend1  %rolling window analysis
         axis([timevect1(1) timevect2(end) 0 max(quantile(forecast_model12',0.975))*1.5])
 
         xlabel('Time')
-        ylabel(strcat(caddisease,{' '},datatype))
+
+
+        cad2=strcat('(',caddisease,{' '},datatype,')');
+
+        if vars.fit_diff
+            ylabel(strcat(vars.label(vars.fit_index),'''(t)',{' '},cad2))
+        else
+            ylabel(strcat(vars.label(vars.fit_index),'(t)',{' '},cad2))
+        end
+
+
 
         set(gca,'FontSize',24)
         set(gcf,'color','white')
