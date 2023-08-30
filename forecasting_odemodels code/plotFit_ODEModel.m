@@ -1,4 +1,4 @@
-function plotFit_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass)
+function [AICcs,performanceC,forecast_model12,Ys]=plotFit_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass)
 
 % <============================================================================>
 % < Author: Gerardo Chowell  ==================================================>
@@ -248,6 +248,8 @@ for i=tstart1:1:tend1 %rolling window analysis
             title(cad1)
         end
 
+        legend(params.composite_name)
+
         set(gca,'FontSize', 24);
         set(gcf,'color','white')
 
@@ -374,6 +376,53 @@ for i=tstart1:1:tend1 %rolling window analysis
     end
 
     paramss=[paramss;params1];
+
+
+    %% plot all state variables in a figure
+
+    if vars.num>1
+
+        figure(500+i)
+
+        factor1=factor(vars.num);
+
+        if length(factor1)==1
+            rows1=1;
+            cols1=factor1;
+        else
+            rows1=factor1(1);
+            cols1=factor1(2);
+        end
+
+        cc1=1;
+
+        for i2=1:1:vars.num
+
+            subplot(rows1,cols1,cc1)
+            %for j=1:M
+            plot(quantile(cell2mat(Ys(i2,:,:))',0.5),'k-')
+            hold on
+            plot(quantile(cell2mat(Ys(i2,:,:))',0.025),'k--')
+            plot(quantile(cell2mat(Ys(i2,:,:))',0.975),'k--')
+            %end
+
+            title(vars.label(i2))
+            set(gca,'FontSize', 24);
+            set(gcf,'color','white')
+
+            cc1=cc1+1;
+
+        end
+
+        for j=1:1:cols1
+
+            subplot(rows1,cols1,rows1*cols1-cols1+j)
+            xlabel('Time')
+        end
+
+    end % if
+
+    %%
 
 end
 

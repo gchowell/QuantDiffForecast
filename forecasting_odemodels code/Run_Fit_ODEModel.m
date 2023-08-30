@@ -1,4 +1,4 @@
-function [AICcs,composite12]=Run_Fit_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass)
+function [AICcs,composite12,Ys]=Run_Fit_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass)
 
 % <============================================================================>
 % < Author: Gerardo Chowell  ==================================================>
@@ -18,11 +18,11 @@ global method1 % Parameter estimation method
 % <=================== Load parameter values supplied by user =================>
 % <============================================================================>
 
-if exist('options_pass','var')==1 & isempty(options_pass)==0
+if exist('options_pass','var')==1 && isempty(options_pass)==0
 
-    options=options_pass; %forecast horizon (number of data points ahead)
+    options1=options_pass; 
 
-    [cadfilename1_INP,caddisease_INP,datatype_INP, dist1_INP, numstartpoints_INP,M_INP, model_INP, params_INP, vars_INP, windowsize1_INP,tstart1_INP,tend1_INP,printscreen1_INP]=options();
+    [cadfilename1_INP,caddisease_INP,datatype_INP, dist1_INP, numstartpoints_INP,M_INP, model_INP, params_INP, vars_INP, windowsize1_INP,tstart1_INP,tend1_INP,printscreen1_INP]=options1();
 
 else
 
@@ -196,7 +196,8 @@ for i=tstart1:1:tend1  %rolling window analysis
         params0=[params.initial vars.initial(vars.fit_index) 1 1];
     end
 
-    [P_model1d,residual_model1, fitcurve_model1d, forecastcurve_model1, timevect2, initialguess,fval]=fit_model(data1,params0,numstartpoints,DT,model,params,vars,0);
+    [P_model1d,residual_model1, fitcurve_model1d, forecastcurve_model1, timevect2, initialguess,fval, F1,F2]=fit_model(data1,params0,numstartpoints,DT,model,params,vars,0);
+
 
     %     plot(timevect1,data1(:,2),'ko')
     %     hold on
@@ -290,9 +291,14 @@ for i=tstart1:1:tend1  %rolling window analysis
         %params0=initialParams(data1(:,2),flag1);
         params0=P_model1d;
 
-        [P_model1,residual_model1 fitcurve_model1 forecastcurve_model1 timevect2]=fit_model(data1,params0,2,DT,model,params,vars,forecastingperiod);
+        [P_model1,residual_model1 fitcurve_model1 forecastcurve_model1 timevect2,initialguess,fval, F1,F2]=fit_model(data1,params0,2,DT,model,params,vars,forecastingperiod);
 
         fit_model1=[fit_model1 fitcurve_model1];
+
+        for i2=1:vars.num
+            Ys(i2,j)={F2(:,i2)};
+        end
+
 
         %P_model1
         %pause
@@ -529,6 +535,50 @@ for i=tstart1:1:tend1  %rolling window analysis
 
 end % rolling window analysis
 
+
+%% plot all state variables in a figure
+
+if vars.num>1
+
+    figure(200)
+
+    factor1=factor(vars.num);
+
+    if length(factor1)==1
+        rows1=1;
+        cols1=factor1;
+    else
+        rows1=factor1(1);
+        cols1=factor1(2);
+    end
+
+    cc1=1;
+    for i2=1:1:vars.num
+
+        subplot(rows1,cols1,cc1)
+        %for j=1:M
+        plot(quantile(cell2mat(Ys(i2,:,:))',0.5),'k-')
+        hold on
+        plot(quantile(cell2mat(Ys(i2,:,:))',0.025),'k--')
+        plot(quantile(cell2mat(Ys(i2,:,:))',0.975),'k--')
+        %end
+
+        title(vars.label(i2))
+        set(gca,'FontSize', 24);
+        set(gcf,'color','white')
+
+        cc1=cc1+1;
+
+    end
+
+    for j=1:1:cols1
+
+        subplot(rows1,cols1,rows1*cols1-cols1+j)
+        xlabel('Time')
+    end
+end
+
+%%
 
 %save model parameters from tstart1 to tend1
 save(strcat('./output/parameters-ODEModel-',cadfilename1,'-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-forecastingperiod-',num2str(forecastingperiod),'.mat'), 'param_estims','-mat')

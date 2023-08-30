@@ -2,7 +2,7 @@
 % < Author: Gerardo Chowell  ==================================================>
 % <============================================================================>
 
-function [P residual fitcurve forecastcurve timevect2,initialguess,fval]=fit_model(data1,params0,numstartpoints,DT,modelX,paramsX,varsX,forecastingperiod)
+function [P residual fitcurve forecastcurve timevect2,initialguess,fval,F1,F2]=fit_model(data1,params0,numstartpoints,DT,modelX,paramsX,varsX,forecastingperiod)
 
 global model params vars method1 timevect ydata
 
@@ -138,6 +138,7 @@ while flagg<0
     end
 
     initialguess=[initialguess;z];
+
     %z
     %list(tpoints)
 
@@ -159,7 +160,6 @@ options = [];
 
 IC=vars.initial;
 
-
 if params.fixI0==1
     IC(vars.fit_index)=I0;
 else
@@ -167,6 +167,7 @@ else
 end
 
 [~,F]=ode15s(model.fc,timevect,IC,options,P,params.extra0);
+F1=F;
 
 if vars.fit_diff==1
     fitcurve=abs([F(1,vars.fit_index);diff(F(:,vars.fit_index))]);
@@ -182,11 +183,13 @@ if forecastingperiod<1
 
     forecastcurve=residual+data1(:,2);
     timevect2=timevect;
+    F2=F1;
 
 else
     timevect2=(data1(1,1):data1(end,1)+forecastingperiod)*DT;
 
     [~,F]=ode15s(model.fc,timevect2,IC,options,P,params.extra0);
+    F2=F;
 
     if vars.fit_diff==1
         forecastcurve=abs([F(1,vars.fit_index);diff(F(:,vars.fit_index))]);

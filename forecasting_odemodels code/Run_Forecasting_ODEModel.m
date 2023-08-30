@@ -1,4 +1,4 @@
-function   [AICcs,performanceC,performanceF,forecast_model12,data1,datalatest]=Run_Forecasting_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass,forecastingperiod_pass)
+function   [AICcs,performanceC,performanceF,forecast_model12,data1,datalatest,Ys]=Run_Forecasting_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass,forecastingperiod_pass)
 
 % <============================================================================>
 % < Author: Gerardo Chowell  ==================================================>
@@ -129,6 +129,7 @@ else
 
 end
 
+
 if exist('windowsize1_pass','var')==1 & isempty(windowsize1_pass)==0
 
     windowsize1=windowsize1_pass;
@@ -174,6 +175,7 @@ cc1=1;
 paramss=[];
 
 composite12=[];
+
 
 for i=tstart1:1:tend1  %rolling window analysis
 
@@ -312,11 +314,16 @@ for i=tstart1:1:tend1  %rolling window analysis
         %params0=initialParams(data1(:,2),flag1);
         params0=P_model1d;
 
-        [P_model1,residual_model1 fitcurve_model1 forecastcurve_model1 timevect2]=fit_model(data1,params0,2,DT,model,params,vars,forecastingperiod);
+        [P_model1,residual_model1 fitcurve_model1 forecastcurve_model1 timevect2,initialguess,fval, F1,F2]=fit_model(data1,params0,2,DT,model,params,vars,forecastingperiod);
 
         fit_model1=[fit_model1 fitcurve_model1];
 
         forecast_model1=[forecast_model1 forecastcurve_model1];
+
+        for i2=1:vars.num
+            Ys(i2,j)={F2(:,i2)};
+        end
+
 
         if method1==0 & dist1==0
 
@@ -549,6 +556,53 @@ for i=tstart1:1:tend1  %rolling window analysis
 
 end % rolling window analysis
 
+
+%% plot all state variables in a figure
+
+if vars.num>1
+
+    figure(200)
+
+    factor1=factor(vars.num);
+
+    if length(factor1)==1
+        rows1=1;
+        cols1=factor1;
+    else
+        rows1=factor1(1);
+        cols1=factor1(2);
+    end
+
+    cc1=1;
+
+    for i2=1:1:vars.num
+
+        cell2mat(Ys(i2,:,:))
+
+        subplot(rows1,cols1,cc1)
+        %for j=1:M
+        plot(quantile(cell2mat(Ys(i2,:,:))',0.5),'k-')
+        hold on
+        plot(quantile(cell2mat(Ys(i2,:,:))',0.025),'k--')
+        plot(quantile(cell2mat(Ys(i2,:,:))',0.975),'k--')
+        %end
+
+        title(vars.label(i2))
+        set(gca,'FontSize', 24);
+        set(gcf,'color','white')
+
+        cc1=cc1+1;
+
+    end
+
+    for j=1:1:cols1
+
+        subplot(rows1,cols1,rows1*cols1-cols1+j)
+        xlabel('Time')
+    end
+end
+
+%%
 
 
 %save model parameters from tstart1 to tend1

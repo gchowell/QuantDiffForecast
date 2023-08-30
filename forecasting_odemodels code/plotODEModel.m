@@ -1,4 +1,4 @@
-function plotODEModel(options_pass,windowsize1_pass)
+function Ys=plotODEModel(options_pass,windowsize1_pass)
 
 close all
 
@@ -12,17 +12,18 @@ global method1 % Parameter estimation method
 % <=================== Load parameter values supplied by user =================>
 % <============================================================================>
 
-if exist('options_pass','var')==1 & isempty(options_pass)==0
+if exist('options_pass','var')==1 && isempty(options_pass)==0
 
-    options=options_pass; %forecast horizon (number of data points ahead)
+    options1=options_pass;
 
-    [cadfilename1_INP,caddisease_INP,datatype_INP, dist1_INP, numstartpoints_INP,M_INP, model_INP, params_INP, vars_INP, windowsize1_INP,tstart1_INP,tend1_INP,printscreen1_INP]=options();
+    [cadfilename1_INP,caddisease_INP,datatype_INP, dist1_INP, numstartpoints_INP,M_INP, model_INP, params_INP, vars_INP, windowsize1_INP, tstart1_INP, tend1_INP, printscreen1_INP]=options1();
 
 else
 
     [cadfilename1_INP,caddisease_INP,datatype_INP, dist1_INP, numstartpoints_INP,M_INP, model_INP, params_INP, vars_INP, windowsize1_INP,tstart1_INP,tend1_INP,printscreen1_INP]=options_fit;
 
 end
+
 
 % <============================================================================>
 % <================================ Datasets properties ==============================>
@@ -133,10 +134,24 @@ for j=1:M
 
     end
 
-    composite1=[composite1;params.composite(param1')];
+    if isempty(params.composite)==1
+        composite1=[composite1;NaN];
+    else
+        composite1=[composite1;params.composite(param1')];
+    end
 
 
     [~,F]=ode15s(model.fc,timevect,IC,options,param1,params.extra0);
+
+     F=real(F);
+
+
+    for i2=1:vars.num
+        Ys(i2,j)={F(:,i2)};
+    end
+
+
+    %plot(cell2mat(Ys(1,9,:))) %M,var,time
 
     if vars.fit_diff==1
         fitcurve=abs([F(1,vars.fit_index);diff(F(:,vars.fit_index))]);
@@ -213,6 +228,47 @@ title(cad1)
 
 set(gca,'FontSize', 24);
 set(gcf,'color','white')
+
+%% plot all state variables in a figure
+
+figure
+
+factor1=factor(vars.num);
+
+if length(factor1)==1
+    rows1=1;
+    cols1=factor1;
+else
+    rows1=factor1(1);
+    cols1=factor1(2);
+end
+
+cc1=1;
+for i=1:1:vars.num
+
+    subplot(rows1,cols1,cc1)
+
+    plot(cell2mat(Ys(i,:,:)),'b-')
+    hold on
+
+    %for j=1:M
+    %    plot(cell2mat(Ys(j,i,:)),'b-')
+    %    hold on
+    %end
+
+    title(vars.label(i))
+    set(gca,'FontSize', 24);
+    set(gcf,'color','white')
+
+    cc1=cc1+1;
+
+end
+
+for j=1:1:cols1
+
+    subplot(rows1,cols1,rows1*cols1-cols1+j)
+    xlabel('Time')
+end
 
 
 if 0
