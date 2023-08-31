@@ -173,18 +173,18 @@ end
 subplot(1,2,1)
 xlabel('Time')
 if vars.fit_diff
-    ylabel(strcat('d/dt(',vars.label(vars.fit_index),'(t))'))
+    ylabel(strcat(vars.label(vars.fit_index),'''(t)',{' '}))
 else
-    ylabel(strcat(vars.label(vars.fit_index),'(t)'))
+    ylabel(strcat(vars.label(vars.fit_index),'(t)',{' '}))
 end
+
 subplot(1,2,2)
 xlabel('Time')
 if vars.fit_diff
-    ylabel(strcat('d/dt(',vars.label(vars.fit_index),'(t))'))
+    ylabel(strcat(vars.label(vars.fit_index),'''(t)',{' '}))
 else
-    ylabel(strcat(vars.label(vars.fit_index),'(t)'))
+    ylabel(strcat(vars.label(vars.fit_index),'(t)',{' '}))
 end
-
 
 %subplot(1,2,1)
 %line1=plot(timevect,median(curvess,2),'k--')
