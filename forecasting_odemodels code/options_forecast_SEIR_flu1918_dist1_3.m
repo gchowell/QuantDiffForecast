@@ -108,3 +108,5 @@ tstart1=1; % time point for the start of rolling window analysis
 tend1=1;  %time point for the end of the rolling window analysis
 
 printscreen1=0;
+
+options_forecast_SEIR_flu1918_dist1_3
