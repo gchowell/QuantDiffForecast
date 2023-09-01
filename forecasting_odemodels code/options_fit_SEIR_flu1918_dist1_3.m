@@ -100,18 +100,3 @@ tend1=1;  %time point for the end of the rolling window analysis
 
 printscreen1=0;
 
-
-% <===========================================================================================================>
-% <====== Check that the number of estimated parameters is smaller than the number of data points= ===========>
-% <===========================================================================================================>
-
-numparams=get_nparams(method1,dist1,sum(params.fixed==0),params.fixI0);
-
-numparams
-windowsize1
-
-if numparams>=windowsize1
-
-    error("Number of estimated parameters should be smaller than the calibration period. Consider increasing the length of the calibration period.")
-
-end

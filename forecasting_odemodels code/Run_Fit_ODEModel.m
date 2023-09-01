@@ -30,6 +30,7 @@ else
 
 end
 
+
 % <============================================================================>
 % <================================ Datasets properties ==============================>
 % <============================================================================>
@@ -83,6 +84,7 @@ if length(params.label)~=params.num | length(params.fixed)~=params.num | length(
     error('one or more parameter vectors do not match the number of parameters specified in <params.num>')
 end
 
+
 % <==============================================================================>
 % <======================== Load epidemic data ========================================>
 % <==============================================================================>
@@ -126,6 +128,23 @@ else
 end
 
 printscreen1=printscreen1_INP;
+
+
+% <===========================================================================================================>
+% <====== Check that the number of estimated parameters is smaller than the number of data points= ===========>
+% <===========================================================================================================>
+
+numparams=get_nparams(method1,dist1,sum(params.fixed==0),params.fixI0);
+
+numparams
+windowsize1
+
+if numparams>=windowsize1
+
+    error("Number of estimated parameters should be smaller than the calibration period. Consider increasing the length of the calibration period.")
+
+end
+
 
 % <==================================================================================>
 % ============================ Rolling window analysis=====================================>
@@ -546,7 +565,7 @@ end % rolling window analysis
 
 %% plot all state variables in a figure
 
-if vars.num>1
+if vars.num>1 & printscreen1
 
     figure(200)
 
@@ -584,6 +603,7 @@ if vars.num>1
         subplot(rows1,cols1,rows1*cols1-cols1+j)
         xlabel('Time')
     end
+
 end
 
 %%
