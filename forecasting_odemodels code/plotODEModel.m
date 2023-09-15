@@ -119,6 +119,8 @@ IC=vars.initial;
 curvess=[];
 composite1=[];
 
+SSEs=[];
+
 for j=1:M
 
     param1=[];
@@ -168,10 +170,25 @@ for j=1:M
     hold on
     curvess=[curvess fitcurve];
 
+    % compute SSE across curves
+    SSEs=[SSEs;sum((fitcurve-data(:,2)).^2)];
+
 end
+
+[min1,index1]=min(SSEs);
+
+subplot(1,2,1)
+% plot the fitting variable
+line1=plot(timevect,curvess(:,index1),'g-')
+set(line1,'LineWidth',4)
+hold on
+subplot(1,2,2)
+line1=plot(timevect,curvess(:,index1),'g-')
+set(line1,'LineWidth',4)
 
 subplot(1,2,1)
 xlabel('Time')
+
 if vars.fit_diff
     ylabel(strcat(vars.label(vars.fit_index),'''(t)',{' '}))
 else
@@ -215,19 +232,23 @@ title('zoomed')
 
 % plot the empirical distribution of the composite parameter
 
-figure
+if isempty(params.composite)==0
 
-composite=[median(composite1) quantile(composite1,0.025) quantile(composite1,0.975)]
+    figure
 
+    composite=[median(composite1) quantile(composite1,0.025) quantile(composite1,0.975)]
 
-cad1=strcat('\it{',params.composite_name,'}=',num2str(composite(end,1),4),' (95%CI:',num2str(composite(end,2),4),',',num2str(composite(end,3),4),')')
-hist(composite1)
-ylabel('Frequency')
-xlabel(params.composite_name)
-title(cad1)
+    cad1=strcat('\it{',params.composite_name,'}=',num2str(composite(end,1),4),' (95%CI:',num2str(composite(end,2),4),',',num2str(composite(end,3),4),')')
+    hist(composite1)
+    ylabel('Frequency')
+    xlabel(params.composite_name)
+    title(cad1)
 
-set(gca,'FontSize', 24);
-set(gcf,'color','white')
+    set(gca,'FontSize', 24);
+    set(gcf,'color','white')
+
+end
+
 
 %% plot all state variables in a figure
 

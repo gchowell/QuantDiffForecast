@@ -40,17 +40,13 @@ switch method1
         UBe=[0 0];
     case 3
         LBe=[10^-8 1];
-        UBe=[10^5 1];
+        UBe=[10^4 1];
     case 4
         LBe=[10^-8 1];
-        UBe=[10^5 1];
+        UBe=[10^4 1];
     case 5
         LBe=[10^-8 0.6]; %d>=1
-        UBe=[10^5 10^3];
-
-        %LBe=[10^-8 0.5];
-        %UBe=[10^5 0.5];
-
+        UBe=[10^4 10^3];
 end
 
 if params.fixI0==1
@@ -105,7 +101,7 @@ end
 
 ydata=data1(:,2);
 
-options=optimoptions('fmincon','Algorithm','sqp','StepTolerance',1.0000e-6,'MaxFunEvals',20000,'MaxIter',20000);
+options=optimoptions('fmincon','Algorithm','sqp','StepTolerance',1.0000e-6,'MaxFunEvals',10000,'MaxIter',10000);
 
 %options=optimoptions('fmincon','Algorithm','sqp','MaxFunEvals',10000,'MaxIter',10000);
 
