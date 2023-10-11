@@ -30,6 +30,10 @@ else
 
 end
 
+params_INP.num=length(params_INP.label); % number of model parameters
+
+vars_INP.num=length(vars_INP.label); % number of variables comprising the ODE model
+
 
 % <============================================================================>
 % <================================ Datasets properties ==============================>
@@ -50,6 +54,10 @@ datatype=datatype_INP;
 d=1;
 
 dist1=dist1_INP; %Define dist1 which is the type of error structure:
+
+if method1>0
+    dist1=method1;
+end
 
 % LSQ=0,
 % MLE Poisson=1,
@@ -198,8 +206,10 @@ for i=tstart1:1:tend1 %rolling window analysis
             paramslabels1(1+(j-1)*3:j*3)={cell2mat(params.label(j)), strcat(cell2mat(params.label(j)),'_95%CI LB'), strcat(cell2mat(params.label(j)),'_95%CI UB')};
         end
 
-        ylabel('Frequency')
-
+        if j==1
+           ylabel('Frequency')
+        end
+        
 
         title(cad1)
 
