@@ -2,8 +2,7 @@
 % < Author: Gerardo Chowell  ==================================================>
 % <============================================================================>
 
-function [cadfilename1,caddisease,datatype, dist1, numstartpoints,B, model, params,vars,getperformance, forecastingperiod,windowsize1,tstart1,tend1,printscreen1]=options_forecast
-
+function [cadfilename1,caddisease,datatype, dist1, numstartpoints,B, model, params,vars,windowsize1,tstart1,tend1,printscreen1]=options_fit
 
 % <============================================================================>
 % <=================== Declare global variables =======================================>
@@ -19,9 +18,9 @@ global method1 % Parameter estimation method
 % The first column corresponds to time index: 0,1,2, ... and the second
 % column corresponds to the observed time series data.
 
-cadfilename1='curve-flu1918SF'; % Name of the data file (without extension) containing the incidence curve
+cadfilename1='curve-cases-covid-spain';
 
-caddisease='1918 Flu'; % string indicating the name of the disease related to the time series data
+caddisease='COVID-19'; % string indicating the name of the disease related to the time series data
 
 datatype='cases'; % string indicating the nature of the data (cases, deaths, hospitalizations, etc)
 
@@ -36,7 +35,6 @@ method1=3; % Type of estimation method
 % MLE (Neg Binomial)=3, with VAR=mean+alpha*mean;
 % MLE (Neg Binomial)=4, with VAR=mean+alpha*mean^2;
 % MLE (Neg Binomial)=5, with VAR=mean+alpha*mean^d;
-
 
 dist1=3; % Define dist1 which is the type of error structure. See below:
 
@@ -69,32 +67,27 @@ B=300; % number of bootstrap realizations to characterize parameter uncertainty
 % <==============================================================================>
 % <============================== ODE model =====================================>
 % <==============================================================================>
-model.fc=@SEIR1; % name of the model function
-model.name='SEIR model';   % string indicating the name of the ODE model
 
-params.label={'\beta','\kappa','\gamma','N'};  % list of symbols to refer to the model parameters
-params.LB=[0.001 0 0 20]; % lower bound values of the parameter estimates
-params.UB=[10 2 2 1000000]; % upper bound values of the parameter estimates
-params.initial=[0.76 1/1.9 1/4.1 550000]; % initial parameter values/guesses
+model.fc=@SEIR_unreported; % name of the model function
+model.name='SEIR covid model with underreporting';   % string indicating the name of the ODE model
 
-params.fixed=[0 1 1 1]; % Boolean vector to indicate any parameters that should remain fixed (1) to initial values indicated in params.initial. Otherwise the parameter is estimated (0).
+params.num=8; % number of model parameters
+params.label={'\beta_0','\beta_1','\alpha','q','\rho','\kappa','\gamma','N'};  % list of symbols to refer to the model parameters
+params.LB=[0.001 0 0.5 0 0 0 0 47332614]; % lower bound values of the parameter estimates
+params.UB=[4 2 1 5 1 2 2 47332614]; % upper bound values of the parameter estimates
+params.initial=[1.9 0.15 0.94 0.06 0.82 1/6 1/4 47332614]; % initial parameter values/guesses
+params.fixed=[0 0 0 0 0 1 1 1]; % Boolean vector to indicate any parameters that should remain fixed (1) to initial values indicated in params.initial. Otherwise the parameter is estimated (0).
 params.fixI0=1; % Boolean variable indicating if the initial value of the fitting variable is fixed according to the first observation in the time series (1). Otherwise, it will be estimated along with other parameters (0).
-params.composite=@R0s;  % Estimate a composite function of the individual model parameter estimates otherwise it is left empty.
+params.composite=@R0s_unreported;  % Estimate a composite function of the individual model parameter estimates otherwise it is left empty.
 params.composite_name='R_0'; % Name of the composite parameter
-params.extra0=[];
+params.extra0='';
 
-vars.label={'S','E','I','R','C'}; % list of symbols to refer to the variables included in the model
-vars.initial=[params.initial(4)-4 0 4 0 4];  % vector of initial conditions for the model variables
-vars.fit_index=5; % index of the model's variable that will be fit to the observed time series data
+
+vars.num=6; % number of variables comprising the ODE model
+vars.label={'S','E','I','U','R','C'}; % list of symbols to refer to the variables included in the model
+vars.initial=[params.initial(8)-3 0 3 0 0 3];  % vector of initial conditions for the model variables
+vars.fit_index=6; % index of the model's variable that will be fit to the observed time series data
 vars.fit_diff=1; % boolean variable to indicate if the derivative of model's fitting variable should be fit to data.
-
-% <==============================================================================>
-% <========================== Forecasting parameters ===================================>
-% <==============================================================================>
-
-getperformance=1; % flag or indicator variable (1/0) to calculate forecasting performance or not
-
-forecastingperiod=10; % forecast horizon (number of time units ahead)
 
 % <==================================================================================>
 % <========================== Parameters of the rolling window analysis =========================>
