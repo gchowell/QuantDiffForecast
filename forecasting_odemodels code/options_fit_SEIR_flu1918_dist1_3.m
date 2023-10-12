@@ -71,7 +71,6 @@ B=300; % number of bootstrap realizations to characterize parameter uncertainty
 model.fc=@SEIR1; % name of the model function
 model.name='SEIR model';   % string indicating the name of the ODE model
 
-params.num=4; % number of model parameters
 params.label={'\beta','\kappa','\gamma','N'};  % list of symbols to refer to the model parameters
 params.LB=[0.01 0.01 0.01 20]; % lower bound values of the parameter estimates
 params.UB=[10 2 2 1000000]; % upper bound values of the parameter estimates
@@ -82,7 +81,6 @@ params.composite=@R0s;  % Estimate a composite function of the individual model 
 params.composite_name='R_0'; % Name of the composite parameter
 params.extra0=[];
 
-vars.num=5; % number of variables comprising the ODE model
 vars.label={'S','E','I','R','C'}; % list of symbols to refer to the variables included in the model
 vars.initial=[params.initial(4)-4 0 4 0 4];  % vector of initial conditions for the model variables
 vars.fit_index=5; % index of the model's variable that will be fit to the observed time series data
