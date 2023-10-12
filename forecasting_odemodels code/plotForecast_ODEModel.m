@@ -296,7 +296,7 @@ for i=tstart1:1:tend1  %rolling window analysis
         % <========================================================================================>
         % <================================ Plot model fit and forecast ======================================>
         % <========================================================================================>
-         
+
         figure(100+i)
 
         subplot(2,params.num,[params.num+1:1:params.num*2])
@@ -359,50 +359,7 @@ for i=tstart1:1:tend1  %rolling window analysis
     end
 
 
-    %% plot all state variables in a figure
-
-    if vars.num>1
-
-        figure(500+i)
-
-        factor1=factor(vars.num);
-
-        if length(factor1)==1
-            rows1=1;
-            cols1=factor1;
-        else
-            rows1=factor1(1);
-            cols1=factor1(2);
-        end
-
-        cc1=1;
-        for i2=1:1:vars.num
-
-            subplot(rows1,cols1,cc1)
-            %for j=1:M
-            plot(quantile(cell2mat(Ys(i2,:,:))',0.5),'k-')
-            hold on
-            plot(quantile(cell2mat(Ys(i2,:,:))',0.025),'k--')
-            plot(quantile(cell2mat(Ys(i2,:,:))',0.975),'k--')
-            %end
-
-            title(vars.label(i2))
-            set(gca,'FontSize', 24);
-            set(gcf,'color','white')
-
-            cc1=cc1+1;
-
-        end
-        for j=1:1:cols1
-
-            subplot(rows1,cols1,rows1*cols1-cols1+j)
-            xlabel('Time')
-        end
-    end
-
     %%
-
-
 
     if length(tstart1:1:tend1)>1
 
@@ -468,7 +425,46 @@ for i=tstart1:1:tend1  %rolling window analysis
 
     paramss=[paramss;params1];
 
-    %
+    %% plot all state variables in a figure
+
+    if vars.num>1
+
+        figure(500+i)
+
+        factor1=factor(vars.num);
+
+        if length(factor1)==1
+            rows1=1;
+            cols1=factor1;
+        else
+            rows1=factor1(1);
+            cols1=factor1(2);
+        end
+
+        cc1=1;
+        for i2=1:1:vars.num
+
+            subplot(rows1,cols1,cc1)
+            %for j=1:M
+            plot(quantile(cell2mat(Ys(i2,:,:))',0.5),'k-')
+            hold on
+            plot(quantile(cell2mat(Ys(i2,:,:))',0.025),'k--')
+            plot(quantile(cell2mat(Ys(i2,:,:))',0.975),'k--')
+            %end
+
+            title(vars.label(i2))
+            set(gca,'FontSize', 24);
+            set(gcf,'color','white')
+
+            cc1=cc1+1;
+
+        end
+        for j=1:1:cols1
+
+            subplot(rows1,cols1,rows1*cols1-cols1+j)
+            xlabel('Time')
+        end
+    end
 
 
     if getperformance && forecastingperiod>0 && length(data_all)<windowsize1+forecastingperiod
@@ -631,6 +627,29 @@ else
 end
 
 writetable(T,strcat('./output/parameters-rollingwindow-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
+
+% <=============================================================================================>
+% <================= Save csv file with MCE values from rolling window analysis ================================>
+% <=============================================================================================>
+
+if method1==3 | method1==4  %save parameter alpha. VAR=mean+alpha*mean; VAR=mean+alpha*mean^2;
+    rollparams=[(tstart1:1:tend1)' MCEs(:,1:end-1)];
+    T = array2table(rollparams);
+    T.Properties.VariableNames(1)={'time'};
+    T.Properties.VariableNames(2:(params.num+2)+1) = paramslabels1(1:3:end);
+elseif method1==5   % save parameters alpha and d. VAR=mean+alpha*mean^d;
+    rollparams=[(tstart1:1:tend1)' MCEs(:,1:end-1)];
+    T = array2table(rollparams);
+    T.Properties.VariableNames(1)={'time'};
+    T.Properties.VariableNames(2:(params.num+3)+1) =  paramslabels1(1:3:end);
+else
+    rollparams=[(tstart1:1:tend1)' MCEs(:,1:end)];
+    T = array2table(rollparams);
+    T.Properties.VariableNames(1)={'time'};
+    T.Properties.VariableNames(2:(params.num+1)+1) =  paramslabels1(1:3:end);
+end
+
+writetable(T,strcat('./output/MCEs-rollingwindow-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
 
 % <=============================================================================================>
 % <================= Save csv file with composite parameter ===============================================>

@@ -169,6 +169,8 @@ end
 
 param_estims=zeros(params.num+3,3,length(tstart1:1:tend1)); % median, 95% CI: LB, UB
 
+MCEs=zeros(length(tstart1:1:tend1),params.num+3);
+
 RMSECSS=[];
 MSECSS=[];
 MAECSS=[];
@@ -422,11 +424,17 @@ for i=tstart1:1:tend1  %rolling window analysis
 
         param_estims(j,1:3,cc1) = [median(Phatss_model1(:,j)) quantile(Phatss_model1(:,j),0.025) quantile(Phatss_model1(:,j),0.975)];
 
+        MCEs(cc1,j)=std(Phatss_model1(:,j))/sqrt(M);
+
     end
 
     param_estims(params.num+1,1:3,cc1) = [median(Phatss_model1(:,params.num+1)) quantile(Phatss_model1(:,params.num+1),0.025) quantile(Phatss_model1(:,params.num+1),0.975)];
     param_estims(params.num+2,1:3,cc1) = [median(Phatss_model1(:,params.num+2)) quantile(Phatss_model1(:,params.num+2),0.025) quantile(Phatss_model1(:,params.num+2),0.975)];
     param_estims(params.num+3,1:3,cc1) = [median(Phatss_model1(:,params.num+3)) quantile(Phatss_model1(:,params.num+3),0.025) quantile(Phatss_model1(:,params.num+3),0.975)];
+
+    MCEs(cc1,params.num+1)=std(Phatss_model1(:,params.num+1))/sqrt(M); %X0
+    MCEs(cc1,params.num+2)=std(Phatss_model1(:,params.num+2))/sqrt(M); %alpha
+    MCEs(cc1,params.num+3)=std(Phatss_model1(:,params.num+3))/sqrt(M); %d
 
     if isempty(params.composite)==0
 
@@ -634,7 +642,6 @@ end
 
 %%
 
-
 %save model parameters from tstart1 to tend1
 save(strcat('./output/parameters-ODEModel-',cadfilename1,'-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-forecastingperiod-',num2str(forecastingperiod),'.mat'), 'param_estims','-mat')
 
@@ -673,6 +680,30 @@ else
 end
 
 writetable(T,strcat('./output/parameters-rollingwindow-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
+
+% <=============================================================================================>
+% <================= Save csv file with MCE values from rolling window analysis ================================>
+% <=============================================================================================>
+
+if method1==3 | method1==4  %save parameter alpha. VAR=mean+alpha*mean; VAR=mean+alpha*mean^2;
+    rollparams=[(tstart1:1:tend1)' MCEs(:,1:end-1)];
+    T = array2table(rollparams);
+    T.Properties.VariableNames(1)={'time'};
+    T.Properties.VariableNames(2:(params.num+2)+1) = paramslabels1(1:3:end);
+elseif method1==5   % save parameters alpha and d. VAR=mean+alpha*mean^d;
+    rollparams=[(tstart1:1:tend1)' MCEs(:,1:end-1)];
+    T = array2table(rollparams);
+    T.Properties.VariableNames(1)={'time'};
+    T.Properties.VariableNames(2:(params.num+3)+1) =  paramslabels1(1:3:end);
+else
+    rollparams=[(tstart1:1:tend1)' MCEs(:,1:end)];
+    T = array2table(rollparams);
+    T.Properties.VariableNames(1)={'time'};
+    T.Properties.VariableNames(2:(params.num+1)+1) =  paramslabels1(1:3:end);
+end
+
+writetable(T,strcat('./output/MCEs-rollingwindow-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
+
 
 % <=============================================================================================>
 % <================= Save csv file with composite parameter ===============================================>
