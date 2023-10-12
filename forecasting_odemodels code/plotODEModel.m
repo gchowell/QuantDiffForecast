@@ -24,6 +24,9 @@ else
 
 end
 
+params_INP.num=length(params_INP.label); % number of model parameters
+
+vars_INP.num=length(vars_INP.label); % number of variables comprising the ODE model
 
 % <============================================================================>
 % <================================ Datasets properties ==============================>
