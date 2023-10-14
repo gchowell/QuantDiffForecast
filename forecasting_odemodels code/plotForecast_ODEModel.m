@@ -629,23 +629,18 @@ end
 writetable(T,strcat('./output/parameters-rollingwindow-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
 
 % <=============================================================================================>
-% <================= Save csv file with MCE values from rolling window analysis ================================>
+% <================= Save csv file with Monte Carlo standard errors from rolling window analysis =====================>
 % <=============================================================================================>
 
+ rollparams=[(tstart1:1:tend1)' MCEs(:,1:end)];
+ T = array2table(rollparams);
+ T.Properties.VariableNames(1)={'time'};
+
 if method1==3 | method1==4  %save parameter alpha. VAR=mean+alpha*mean; VAR=mean+alpha*mean^2;
-    rollparams=[(tstart1:1:tend1)' MCEs(:,1:end-1)];
-    T = array2table(rollparams);
-    T.Properties.VariableNames(1)={'time'};
     T.Properties.VariableNames(2:(params.num+2)+1) = paramslabels1(1:3:end);
 elseif method1==5   % save parameters alpha and d. VAR=mean+alpha*mean^d;
-    rollparams=[(tstart1:1:tend1)' MCEs(:,1:end-1)];
-    T = array2table(rollparams);
-    T.Properties.VariableNames(1)={'time'};
     T.Properties.VariableNames(2:(params.num+3)+1) =  paramslabels1(1:3:end);
 else
-    rollparams=[(tstart1:1:tend1)' MCEs(:,1:end)];
-    T = array2table(rollparams);
-    T.Properties.VariableNames(1)={'time'};
     T.Properties.VariableNames(2:(params.num+1)+1) =  paramslabels1(1:3:end);
 end
 
