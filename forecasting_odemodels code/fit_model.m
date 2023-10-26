@@ -2,36 +2,36 @@
 % < Author: Gerardo Chowell  ==================================================>
 % <============================================================================>
 
-function [P residual fitcurve forecastcurve timevect2,initialguess,fval,F1,F2]=fit_model(data1,params0,numstartpoints,DT,modelX,paramsX,varsX,forecastingperiod)
+function [P residual fitcurve forecastcurve timevect2,initialguess,fval]=fit_model(data1,params0,fixI0,numstartpoints,DT,flagX,forecastingperiod)
 
-global model params vars method1 timevect ydata
+global flag1 method1 timevect ydata
 
-model=modelX;
-params=paramsX;
-vars=varsX;
+flag1=flagX;
 
 timevect=data1(:,1)*DT;
 
 %timevect=(data1(:,1))*DT;
 
+r=params0(1);
+p=params0(2);
+a=params0(3);
+K=params0(4);
+I0=params0(5);
+alpha=params0(6);
+d=params0(7);
+
 I0=data1(1,2); % initial condition
 
-z=params0;
+z(1)=r;
+z(2)=p;
+z(3)=a;
+z(4)=K;
+z(5)=I0;
+z(6)=alpha;
+z(7)=d;
 
-for i=1:params.num
-
-    if params.fixed(i)
-
-        params.LB(i)=params0(i);
-
-        params.UB(i)=params0(i);
-
-    end
-
-end
 
 switch method1
-
     case 0
         LBe=[0 0];
         UBe=[0 0];
@@ -40,28 +40,90 @@ switch method1
         UBe=[0 0];
     case 3
         LBe=[10^-8 1];
-        UBe=[10^4 1];
+        UBe=[10^3 1];
     case 4
         LBe=[10^-8 1];
-        UBe=[10^4 1];
+        UBe=[10^5 1];
     case 5
         LBe=[10^-8 0.6]; %d>=1
-        UBe=[10^4 10^3];
+        UBe=[10^5 10^3];
+
 end
 
-if params.fixI0==1
 
-    LB=[params.LB I0 LBe];
-    UB=[params.UB I0 UBe];
+Kmax=100000000000;
+
+if fixI0==1
+
+    switch flag1
+
+         case -1  %EXP
+            LB=[mean(abs(data1(1:2,2)))/100  1 1 0 I0 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2  1 1 0 I0 UBe];
+
+        case 0   %GGM
+            LB=[mean(abs(data1(1:2,2)))/100  0.01 1 0 I0 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2  1 1 0 I0 UBe];
+
+        case 1 % GLM
+            LB=[mean(abs(data1(1:2,2)))/100  0.01 1 20 I0 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2  1 1 Kmax I0 UBe];
+
+        case 2 %GRM
+            LB=[mean(abs(data1(1:2,2)))/100  0.01 0 20 I0 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2  1 10 Kmax I0 UBe];
+
+        case 3 %Logistic
+            LB=[mean(abs(data1(1:2,2)))/100  1 1 20 I0 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2  1 1 Kmax I0 UBe];
+
+        case 4 % Richards
+            LB=[mean(abs(data1(1:2,2)))/100  1 0 20 I0 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2  1 10 Kmax I0 UBe];
+
+        case 5 % Gompertz
+            LB=[mean(abs(data1(1:2,2)))/100  1 0 1 I0 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2  1 params0(3)+5 1 I0 UBe];
+
+    end
 
 else
+    
+    switch flag1
 
-    LB=[params.LB 0 LBe];
-    UB=[params.UB sum(abs(data1(:,2))) UBe];
+        case -1
+            LB=[mean(abs(data1(1:2,2)))/100 1 1 0 1 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2  1 1 0 sum(abs(data1(:,2))) UBe];
+
+        case 0
+            LB=[mean(abs(data1(1:2,2)))/100 0.01 1 0 1 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2  1 1 0 sum(abs(data1(:,2))) UBe];
+
+        case 1
+            LB=[mean(abs(data1(1:2,2)))/100  0.01 1 20 1 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2 1 1 Kmax sum(abs(data1(:,2))) UBe];
+
+        case 2
+            LB=[mean(abs(data1(1:2,2)))/100  0.01 0 20 1 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2  1 10 Kmax sum(abs(data1(:,2))) UBe];
+
+        case 3
+            LB=[mean(abs(data1(1:2,2)))/100  1 1 20 1 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2  1 10 Kmax sum(abs(data1(:,2))) UBe];
+
+        case 4
+            LB=[mean(abs(data1(1:2,2)))/100  1 0 20 1 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2  1 10 Kmax sum(abs(data1(:,2))) UBe];
+
+        case 5
+            LB=[mean(abs(data1(1:2,2)))/100  1 0 1 1 LBe];
+            UB=[mean(abs(data1(1:2,2)))*2  1 params0(3)+5 1 sum(abs(data1(:,2))) UBe];
+
+    end
 
 end
 
-% 
+
 % if 0 % USE LSQCURVEFIT (Non-linear least squares)
 % 
 %     options=optimset('tolfun',10^-5,'TolX',10^-5,'MaxFunEvals',3200,'MaxIter',3200, 'algorithm','trust-region-reflective');
@@ -84,7 +146,6 @@ end
 % 
 %     [P,resnorm,residual,exitflag,output,lambda,J]=lsqcurvefit(@plotModifiedLogisticGrowth1,z,timevect,data1(:,2),LB,UB,options);
 % 
-% 
 % end
 
 %A=[];      % We are using fmincon, but using none of the constraint options
@@ -101,11 +162,11 @@ end
 
 ydata=data1(:,2);
 
-options=optimoptions('fmincon','Algorithm','sqp','StepTolerance',1.0000e-6,'MaxFunEvals',10000,'MaxIter',10000);
+options=optimoptions('fmincon','Algorithm','sqp','StepTolerance',1.0000e-6,'MaxFunEvals',20000,'MaxIter',20000);
 
 %options=optimoptions('fmincon','Algorithm','sqp','MaxFunEvals',10000,'MaxIter',10000);
 
-f=@parameterSearchODE;
+f=@plotModifiedLogisticGrowthMethods1;
 
 problem = createOptimProblem('fmincon','objective',f,'x0',z,'lb',LB,'ub',UB,'options',options);
 
@@ -151,25 +212,19 @@ end
 % pause
 
 % P is the vector with the estimated parameters
+r_hat=P(1);
+p_hat=P(2);
+a_hat=P(3);
+K_hat=P(4);
+I0_hat=P(5);
+alpha_hat=P(6);
+d_hat=P(7);
 
 options = [];
 
-IC=vars.initial;
+[~,F]=ode15s(@modifiedLogisticGrowth,timevect,I0_hat,options,r_hat,p_hat,a_hat,K_hat,flag1);
 
-if params.fixI0==1
-    IC(vars.fit_index)=I0;
-else
-    IC(vars.fit_index)=P(params.num+1);
-end
-
-[~,F]=ode15s(model.fc,timevect,IC,options,P,params.extra0);
-F1=F;
-
-if vars.fit_diff==1
-    fitcurve=abs([F(1,vars.fit_index);diff(F(:,vars.fit_index))]);
-else
-    fitcurve=F(:,vars.fit_index);
-end
+fitcurve=abs([F(1,1);diff(F(:,1))]);
 
 residual=fitcurve-ydata;
 
@@ -179,18 +234,15 @@ if forecastingperiod<1
 
     forecastcurve=residual+data1(:,2);
     timevect2=timevect;
-    F2=F1;
 
 else
+
     timevect2=(data1(1,1):data1(end,1)+forecastingperiod)*DT;
 
-    [~,F]=ode15s(model.fc,timevect2,IC,options,P,params.extra0);
-    F2=F;
+    [~,F]=ode15s(@modifiedLogisticGrowth,timevect2,I0_hat,[],r_hat,p_hat,a_hat,K_hat,flag1);
 
-    if vars.fit_diff==1
-        forecastcurve=abs([F(1,vars.fit_index);diff(F(:,vars.fit_index))]);
-    else
-        forecastcurve=F(:,vars.fit_index);
-    end
+    forecastcurve=abs([F(1,1);diff(F(:,1))]);
 
 end
+
+
