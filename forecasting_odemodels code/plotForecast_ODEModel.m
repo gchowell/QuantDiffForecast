@@ -1,4 +1,4 @@
-function  [AICcs,performanceC,performanceF,forecast_model12,data1,datalatest,Ys]=plotForecast_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass,forecastingperiod_pass)
+function  [AICcs,performanceC,performanceF,forecast_model1,forecast_model12,data1,datalatest,Ys]=plotForecast_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass,forecastingperiod_pass)
 
 % <============================================================================>
 % < Author: Gerardo Chowell  ==================================================>
@@ -632,17 +632,21 @@ writetable(T,strcat('./output/parameters-rollingwindow-model_name-',model.name,'
 % <================= Save csv file with Monte Carlo standard errors from rolling window analysis =====================>
 % <=============================================================================================>
 
- rollparams=[(tstart1:1:tend1)' MCEs(:,1:end)];
- T = array2table(rollparams);
- T.Properties.VariableNames(1)={'time'};
+rollparams=[(tstart1:1:tend1)' MCEs(:,1:end)];
+T = array2table(rollparams);
+
+T.Properties.VariableNames(1)={'time'};
 
 if method1==3 | method1==4  %save parameter alpha. VAR=mean+alpha*mean; VAR=mean+alpha*mean^2;
     T.Properties.VariableNames(2:(params.num+2)+1) = paramslabels1(1:3:end);
+    T=T(:,1:end-1);
 elseif method1==5   % save parameters alpha and d. VAR=mean+alpha*mean^d;
     T.Properties.VariableNames(2:(params.num+3)+1) =  paramslabels1(1:3:end);
 else
     T.Properties.VariableNames(2:(params.num+1)+1) =  paramslabels1(1:3:end);
+    T=T(:,1:end-2);
 end
+
 
 writetable(T,strcat('./output/MCSEs-rollingwindow-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
 
