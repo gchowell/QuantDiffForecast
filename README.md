@@ -15,7 +15,10 @@ Parameter estimation, forecasting, and uncertainty quantification for ODE models
 
   Additional features include:
 
-•	fitting models using different parameter estimation approaches (least-squares, maximum likelihood estimation),
-•	fitting models using assuming different error structures (normal, Poisson, negative binomial),
-•	User can conduct multiple fits of the model to the data through a rolling window analysis 
+<ul>
+  
+<li>fitting models using different parameter estimation approaches (least-squares, maximum likelihood estimation),</li>
+<li>fitting models using assuming different error structures (normal, Poisson, negative binomial),</li>
+<li>User can conduct multiple fits of the model to the data through a rolling window analysis </li>
 
+</ul>
