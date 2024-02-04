@@ -1,16 +1,20 @@
 # QuantDiffForecast
 Parameter estimation, forecasting, and uncertainty quantification for ODE models
 
-Video tutorial: https://www.youtube.com/watch?v=eyyX63H12sY&t=41s
+<p>Video tutorial: https://www.youtube.com/watch?v=eyyX63H12sY&t=41s</p>
 
-It carries out the following tasks: 
+<p> It carries out the following tasks: </p> 
+<ul>
+  
+<li> fitting ODE models to time series data,</ul>li>
+<li> estimation of model parameters with quantified uncertainty, Monte Carlo standard errors (MCSES),</li>
+<li>	plotting the best fit of the ODE model, calibration performance metrics, and empirical distribution of the parameters </li>
+<li> plotting forecasts from the best-fit model and performance metrics of the forecasts,</li>
+<li> conducts rolling window analyses of parameter estimates for specific periods and window sizes</li>
 
-•	fitting ODE models to time series data,
-•	estimation of model parameters with quantified uncertainty, Monte Carlo standard errors (MCSES),
-•	plotting the best fit of the ODE model, calibration performance metrics, and empirical distribution of the parameters
-•	plotting forecasts from the best-fit model and performance metrics of the forecasts,
-•	conducts rolling window analyses of parameter estimates for specific periods and window sizes
-Additional features include:
+</ul>
+
+  Additional features include:
 
 •	fitting models using different parameter estimation approaches (least-squares, maximum likelihood estimation),
 •	fitting models using assuming different error structures (normal, Poisson, negative binomial),
