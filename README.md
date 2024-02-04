@@ -5,7 +5,7 @@ Parameter estimation, forecasting, and uncertainty quantification for ODE models
 
 <p> It carries out the following tasks: </p> 
 <ul>
-<li> fitting ODE models to time series data,</ul>li>
+<li> fitting ODE models to time series data,</li>
 <li> estimation of model parameters with quantified uncertainty, Monte Carlo standard errors (MCSES),</li>
 <li>	plotting the best fit of the ODE model, calibration performance metrics, and empirical distribution of the parameters </li>
 <li> plotting forecasts from the best-fit model and performance metrics of the forecasts,</li>
