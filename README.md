@@ -1,6 +1,7 @@
 # QuantDiffForecast
 Parameter estimation, forecasting, and uncertainty quantification for ODE models
 
+<p> QuantDiffForecast Tutorial: https://onlinelibrary.wiley.com/doi/full/10.1002/sim.10036 </p>
 <p>Video tutorial: https://www.youtube.com/watch?v=eyyX63H12sY&t=41s</p>
 
 <p> It carries out the following tasks: </p> 
