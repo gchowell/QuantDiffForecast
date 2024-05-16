@@ -9,7 +9,7 @@ if method1==0 & dist1==0 % Normal distribution -- one parameter for variance
 
     numparams=numparams+1;
 
-elseif method1==0 & dist1==2 % Quasi Poisson distribution -- one parameter for the dispersion parameter
+elseif method1==0 & dist1==2 % Neg. binomial error structure where var = factor1*mean
 
     numparams=numparams+1;
 

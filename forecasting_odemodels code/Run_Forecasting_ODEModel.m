@@ -278,7 +278,12 @@ for i=tstart1:1:tend1  %rolling window analysis
 
         binsize1=7;
 
-        [ratios,~]=getMeanVarianceRatio(ydata,binsize1,2);
+        if length(ydata)<binsize1*3
+            binsize1=round(binsize1/2);
+
+        end
+
+        [ratios,~]=getMeanVarianceRatio(ydata,binsize1,1);
 
         index1=find(ratios(:,1)>0);
 
@@ -288,6 +293,7 @@ for i=tstart1:1:tend1  %rolling window analysis
             dist1=1;
             factor1=1;
         end
+
 
     elseif method1==0 & dist1==0 % normal distribution of the error structure
 
@@ -367,7 +373,7 @@ for i=tstart1:1:tend1  %rolling window analysis
             Ys(i2,j)={F2(:,i2)};
         end
 
-        if method1==0 & dist1==0
+        if method1==0 & (dist1==0 | dist1==2)
 
             forecast_model12=[forecast_model12 AddErrorStructure(cumsum(forecastcurve_model1),20,dist1,factor1,0)];
 

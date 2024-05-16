@@ -349,7 +349,6 @@ for i=tstart1:1:tend1  %rolling window analysis
     f_model1_sims=[];
 
     for j=1:M
-
         
         f_model1_sim=AddErrorStructure(cumsum(fitcurve_model1d),1,dist1,factor1,d);
 
@@ -377,7 +376,7 @@ for i=tstart1:1:tend1  %rolling window analysis
             Ys(i2,j)={F2(:,i2)};
         end
 
-        if method1==0 & dist1==0
+        if method1==0 & (dist1==0 | dist1==2)
 
             forecast_model12=[forecast_model12 AddErrorStructure(cumsum(forecastcurve_model1),20,dist1,factor1,0)];
 
