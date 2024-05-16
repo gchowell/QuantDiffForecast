@@ -104,9 +104,8 @@ if isfile(strcat('./input/',cadfilename1,'.txt'))
 
 else
     % File does not exist.
-    data=[(0:1:windowsize1-1)' zeros(windowsize1)];
+    data=[(0:1:windowsize1-1)' zeros(windowsize1,length(vars.fit_index))];
 end
-
 
 
 figure
@@ -118,120 +117,125 @@ timevect=data(:,1);
 options=[];
 IC=vars.initial;
 
+cc1=1;
 
-curvess=[];
-composite1=[];
+for x=1:length(vars.fit_index)
 
-SSEs=[];
+    curvess=[];
+    composite1=[];
 
-for j=1:M
+    SSEs=[];
 
-    param1=[];
+    for j=1:M
 
-    for i=1:params.num
+        param1=[];
 
-        if params.fixed(i)
-            param1=[param1;params.initial(i)];
+        for i=1:params.num
 
-        else
-            param1=[param1;unifrnd(params.LB(i),params.UB(i))];
+            if params.fixed(i)
+                param1=[param1;params.initial(i)];
+
+            else
+                param1=[param1;unifrnd(params.LB(i),params.UB(i))];
+            end
+
         end
 
+        if isempty(params.composite)==1
+            composite1=[composite1;NaN];
+        else
+            composite1=[composite1;params.composite(param1')];
+        end
+
+        [~,F]=ode15s(model.fc,timevect,IC,options,param1,params.extra0);
+
+        F=real(F);
+
+        for i2=1:vars.num
+            Ys(i2,j)={F(:,i2)};
+        end
+
+        %plot(cell2mat(Ys(1,9,:))) %M,var,time
+
+        if vars.fit_diff(x)==1
+            fitcurve=abs([F(1,vars.fit_index(x));diff(F(:,vars.fit_index(x)))]);
+        else
+            fitcurve=F(:,vars.fit_index(x));
+        end
+
+        subplot(length(vars.fit_index),2,cc1)
+        % plot the fitting variable
+        line1=plot(timevect,fitcurve,'b-')
+        hold on
+        subplot(length(vars.fit_index),2,cc1+1)
+        line1=plot(timevect,fitcurve,'b-')
+        hold on
+        curvess=[curvess fitcurve];
+
+        % compute SSE across curves
+        SSEs=[SSEs;sum((fitcurve-data(:,x+1)).^2)];
+
     end
 
-    if isempty(params.composite)==1
-        composite1=[composite1;NaN];
-    else
-        composite1=[composite1;params.composite(param1')];
-    end
+    [min1,index1]=min(SSEs);
 
-
-    [~,F]=ode15s(model.fc,timevect,IC,options,param1,params.extra0);
-
-     F=real(F);
-
-
-    for i2=1:vars.num
-        Ys(i2,j)={F(:,i2)};
-    end
-
-
-    %plot(cell2mat(Ys(1,9,:))) %M,var,time
-
-    if vars.fit_diff==1
-        fitcurve=abs([F(1,vars.fit_index);diff(F(:,vars.fit_index))]);
-    else
-        fitcurve=F(:,vars.fit_index);
-    end
-
-    subplot(1,2,1)
+    subplot(length(vars.fit_index),2,cc1)
     % plot the fitting variable
-    line1=plot(timevect,fitcurve,'b-')
+    line1=plot(timevect,curvess(:,index1),'g-')
+    set(line1,'LineWidth',4)
     hold on
-    subplot(1,2,2)
-    line1=plot(timevect,fitcurve,'b-')
-    hold on
-    curvess=[curvess fitcurve];
+    subplot(length(vars.fit_index),2,cc1+1)
+    line1=plot(timevect,curvess(:,index1),'g-')
+    set(line1,'LineWidth',4)
 
-    % compute SSE across curves
-    SSEs=[SSEs;sum((fitcurve-data(:,2)).^2)];
+    subplot(length(vars.fit_index),2,cc1)
+    xlabel('Time')
+
+    if vars.fit_diff(x)
+        ylabel(strcat(vars.label(vars.fit_index(x)),'''(t)',{' '}))
+    else
+        ylabel(strcat(vars.label(vars.fit_index(x)),'(t)',{' '}))
+    end
+
+    subplot(length(vars.fit_index),2,cc1+1)
+    xlabel('Time')
+    if vars.fit_diff(x)
+        ylabel(strcat(vars.label(vars.fit_index(x)),'''(t)',{' '}))
+    else
+        ylabel(strcat(vars.label(vars.fit_index(x)),'(t)',{' '}))
+    end
+
+    %subplot(1,2,1)
+    %line1=plot(timevect,median(curvess,2),'k--')
+    %set(line1,'LineWidth',3)
+    %subplot(1,2,2)
+    %line1=plot(timevect,median(curvess,2),'k--')
+    %set(line1,'LineWidth',3)
+
+    % plot time series data
+
+    subplot(length(vars.fit_index),2,cc1)
+    line1=plot(data(:,1),data(:,x+1),'ro')
+    set(line1,'markersize',6,'LineWidth',2)
+    axis([data(1,1) data(end,1) 0 max(max(curvess))+5])
+
+    subplot(length(vars.fit_index),2,cc1+1)
+    line1=plot(data(:,1),data(:,x+1),'ro')
+    set(line1,'markersize',6,'LineWidth',2)
+    axis([data(1,1) data(end,1) 0 max(data(:,x+1))+5])
+
+    subplot(length(vars.fit_index),2,cc1)
+    set(gca,'FontSize',GetAdjustedFontSize);
+    set(gcf,'color','white')
+    subplot(length(vars.fit_index),2,cc1+1)
+    set(gca,'FontSize',GetAdjustedFontSize);
+    set(gcf,'color','white')
+    title('zoomed')
+
+    cc1=cc1+2;
 
 end
 
-[min1,index1]=min(SSEs);
-
-subplot(1,2,1)
-% plot the fitting variable
-line1=plot(timevect,curvess(:,index1),'g-')
-set(line1,'LineWidth',4)
-hold on
-subplot(1,2,2)
-line1=plot(timevect,curvess(:,index1),'g-')
-set(line1,'LineWidth',4)
-
-subplot(1,2,1)
-xlabel('Time')
-
-if vars.fit_diff
-    ylabel(strcat(vars.label(vars.fit_index),'''(t)',{' '}))
-else
-    ylabel(strcat(vars.label(vars.fit_index),'(t)',{' '}))
-end
-
-subplot(1,2,2)
-xlabel('Time')
-if vars.fit_diff
-    ylabel(strcat(vars.label(vars.fit_index),'''(t)',{' '}))
-else
-    ylabel(strcat(vars.label(vars.fit_index),'(t)',{' '}))
-end
-
-%subplot(1,2,1)
-%line1=plot(timevect,median(curvess,2),'k--')
-%set(line1,'LineWidth',3)
-%subplot(1,2,2)
-%line1=plot(timevect,median(curvess,2),'k--')
-%set(line1,'LineWidth',3)
-
-% plot time series data
-
-subplot(1,2,1)
-line1=plot(data(:,1),data(:,2),'ro')
-set(line1,'markersize',6,'LineWidth',2)
-axis([data(1,1) data(end,1) 0 max(max(curvess))+5])
-
-subplot(1,2,2)
-line1=plot(data(:,1),data(:,2),'ro')
-set(line1,'markersize',6,'LineWidth',2)
-axis([data(1,1) data(end,1) 0 max(data(:,2))+5])
-
-subplot(1,2,1)
-set(gca,'FontSize', 24);
-set(gcf,'color','white')
-subplot(1,2,2)
-set(gca,'FontSize', 24);
-set(gcf,'color','white')
-title('zoomed')
 
 % plot the empirical distribution of the composite parameter
 
@@ -247,7 +251,7 @@ if isempty(params.composite)==0
     xlabel(params.composite_name)
     title(cad1)
 
-    set(gca,'FontSize', 24);
+    set(gca,'FontSize',GetAdjustedFontSize);
     set(gcf,'color','white')
 
 end
@@ -281,7 +285,7 @@ for i=1:1:vars.num
     %end
 
     title(vars.label(i))
-    set(gca,'FontSize', 24);
+    set(gca,'FontSize',GetAdjustedFontSize);
     set(gcf,'color','white')
 
     cc1=cc1+1;
@@ -312,42 +316,34 @@ if 0
     figure
 
     M=1;
+    %dist1=0; factor1=5; %Normal error structure
     dist1=1;
     factor1=1;
+
     d=1;
 
-    [~,F]=ode15s(model.fc,timevect,IC,options,params.initial,params.extra0);
-    if vars.fit_diff==1
-        fitcurve=abs([F(1,vars.fit_index);diff(F(:,vars.fit_index))]);
-    else
-        fitcurve=F(:,vars.fit_index);
+    curves=[];
+    for j=1:length(vars.fit_index)
+        [~,F]=ode15s(model.fc,timevect,IC,options,params.initial,params.extra0);
+        if vars.fit_diff(j)==1
+            fitcurve=abs([F(1,vars.fit_index(j));diff(F(:,vars.fit_index(j)))]);
+        else
+            fitcurve=F(:,vars.fit_index(j));
+        end
+
+        curve_noise=AddErrorStructure(cumsum(fitcurve),M,dist1,factor1,d)
+
+        curves=[curves curve_noise];
     end
 
-    curves=AddErrorStructure(cumsum(fitcurve),M,dist1,factor1,d)
+    curves=max(curves,0);
 
-    plot(timevect,curves,'ro')
+    plot(timevect,curves)
     hold on
-    plot(timevect,fitcurve,'b-')
-    curves=[(0:1:length(curves)-1)' curves];
 
-    cad1='';
-    for j=1:1:params.num
-        cad1=strcat(cad1,params.label(j),'-',num2str(params.initial(j)),'-');
-    end
-    cad1=cell2mat(cad1);
-
-    xlabel('Time')
-    if vars.fit_diff
-        ylabel(strcat('d/dt(',vars.label(vars.fit_index),'(t))'))
-    else
-        ylabel(strcat(vars.label(vars.fit_index),'(t)'))
-    end
-
-    set(gca,'FontSize', 24);
-    set(gcf,'color','white')
+    curves=[timevect curves]
 
     save(strcat('./input/curve-',model_INP.name,'-',cad1,'M-',num2str(M),'-dist1-',num2str(dist1),'-factor1-',num2str(factor1),'.txt'),'curves','-ascii')
-
 
 end
 

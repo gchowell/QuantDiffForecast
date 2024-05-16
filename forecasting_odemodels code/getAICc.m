@@ -1,15 +1,15 @@
 function [AICc,part1,part2,numparams]=getAICc(method1,dist1,params_num,fixI0,fval,n)
   
 numparams=params_num;
-
-if fixI0==0 %fix initial datum or estimated
     
-    numparams=numparams+1;
+numparams=numparams+fixI0;
     
-end
-
 
 if method1==0 & dist1==0 % Normal distribution -- one parameter for variance
+
+    numparams=numparams+1;
+
+elseif method1==0 & dist1==2 % Quasi Poisson distribution -- one parameter for the dispersion parameter
 
     numparams=numparams+1;
 

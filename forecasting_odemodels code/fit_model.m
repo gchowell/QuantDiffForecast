@@ -2,7 +2,7 @@
 % < Author: Gerardo Chowell  ==================================================>
 % <============================================================================>
 
-function [P residual fitcurve forecastcurve timevect2,initialguess,fval,F1,F2]=fit_model(data1,params0,numstartpoints,DT,modelX,paramsX,varsX,forecastingperiod)
+function [P, residual, fitcurve, forecastcurve, timevect2,initialguess,fval,F1,F2]=fit_model(data1,params0,numstartpoints,DT,modelX,paramsX,varsX,forecastingperiod)
 
 global model params vars method1 timevect ydata
 
@@ -10,56 +10,49 @@ model=modelX;
 params=paramsX;
 vars=varsX;
 
-timevect=data1(:,1)*DT;
+% Calculate time vector from data column and a scaling factor DT
+timevect = data1(:,1) * DT;
 
-%timevect=(data1(:,1))*DT;
+% Extract initial conditions from the second column onwards of the first row
+I0 = data1(1, 2:end);
 
-I0=data1(1,2); % initial condition
+% Copy initial parameter values
+z = params0;
 
-z=params0;
-
-for i=1:params.num
-
+% Adjust lower and upper bounds for parameters that are fixed
+for i = 1:params.num
     if params.fixed(i)
-
-        params.LB(i)=params0(i);
-
-        params.UB(i)=params0(i);
-
+        params.LB(i) = params0(i);
+        params.UB(i) = params0(i);
     end
-
 end
 
+% Set extended bounds based on the method specified
 switch method1
-
-    case 0
-        LBe=[0 0];
-        UBe=[0 0];
-    case 1
-        LBe=[0 0];
-        UBe=[0 0];
-    case 3
-        LBe=[10^-8 1];
-        UBe=[10^4 1];
-    case 4
-        LBe=[10^-8 1];
-        UBe=[10^4 1];
+    case {0, 1}
+        % Cases 0 and 1 have no extension on bounds
+        LBe = [0 0];
+        UBe = [0 0];
+    case {3, 4}
+        % Cases 3 and 4 allow wide variation
+        LBe = [1e-8, 1];
+        UBe = [1e4, 1];
     case 5
-        LBe=[10^-8 0.6]; %d>=1
-        UBe=[10^4 10^3];
+        % Case 5 has specific limits for d, assuming it should be >=1
+        LBe = [1e-8, 0.6];
+        UBe = [1e4, 1e3];
 end
 
-if params.fixI0==1
-
-    LB=[params.LB I0 LBe];
-    UB=[params.UB I0 UBe];
-
+% Configure bounds based on whether initial conditions are fixed
+if params.fixI0 == 1
+    LB = [params.LB, I0, LBe];
+    UB = [params.UB, I0, UBe];
 else
-
-    LB=[params.LB 0 LBe];
-    UB=[params.UB sum(abs(data1(:,2))) UBe];
-
+    % If not fixed, use zero and sum of absolute values for initial conditions
+    LB = [params.LB, zeros(1, length(I0))+0.001, LBe];
+    UB = [params.UB, sum(abs(data1(:, 2:end))), UBe];
 end
+
 
 % 
 % if 0 % USE LSQCURVEFIT (Non-linear least squares)
@@ -99,98 +92,141 @@ end
 
 %method1=1; %LSQ=0, MLE (Poisson)=1, Pearson chi-squared=2. MLE(neg binomial)=3
 
-ydata=data1(:,2);
+ydata=data1(:,2:end);
 
-options=optimoptions('fmincon','Algorithm','sqp','StepTolerance',1.0000e-6,'MaxFunEvals',10000,'MaxIter',10000);
-
-f=@parameterSearchODE;
-
-problem = createOptimProblem('fmincon','objective',f,'x0',z,'lb',LB,'ub',UB,'options',options);
-
-%ms = MultiStart('PlotFcns',@gsplotbestf);
-%ms = MultiStart('Display','final');
-ms = MultiStart('Display','off');
-
-%pts = z;
-tpoints = CustomStartPointSet(z);
-
-flagg=-1;
-
-while flagg<0
-
-    initialguess=[];
-
-    if numstartpoints>0
-        rpoints = RandomStartPointSet('NumStartPoints',numstartpoints); % start with a few random starting sets in addition to the guess supplied by the user (z)
-
-        allpts = {rpoints,tpoints};
-        initialguess=list(rpoints,problem);
-
-    else
-        allpts = {tpoints};
-
-    end
-
-    initialguess=[initialguess;z];
-
-    %z
-    %list(tpoints)
-
-    %ms = MultiStart(ms,'StartPointsToRun','bounds')
-    %[xmin,fmin,flag,outpt,allmins] = run(ms,problem,allpts);
-
-
-    [P,fval,flagg,outpt,allmins] = run(ms,problem,allpts);
-
+%convert a matrix into a long column vector using the (:) 
+if length(I0)>1
+    ydata=ydata(:);
 end
 
+% Define the objective function handle
+f = @parameterSearchODE;
 
-% ydata
-% initialguess
-% P
-% pause
+% Set optimization options for fmincon
+options = optimoptions('fmincon', 'Algorithm', 'sqp', 'StepTolerance', 1e-6, ...
+                       'MaxFunEvals', 10000, 'MaxIter', 10000);
+
+% Define the optimization problem
+problem = createOptimProblem('fmincon', 'objective', f, 'x0', z, ...
+                             'lb', LB, 'ub', UB, 'options', options);
+
+% Setup MultiStart with no output display
+ms = MultiStart('Display', 'off');
+
+% Define start point sets
+tpoints = CustomStartPointSet(z);
+
+% Initialize the flag to manage the while loop
+flagg = -1;
+
+% Run optimization until a stopping condition is met
+while flagg < 0
+    initialguess = [];
+    
+    % Add random start points if specified
+    if numstartpoints > 0
+        rpoints = RandomStartPointSet('NumStartPoints', numstartpoints);
+        allpts = {rpoints, tpoints};
+        initialguess = [list(rpoints, problem); z];
+    else
+        allpts = {tpoints};
+        initialguess = [initialguess; z];
+    end
+    
+    % Run the MultiStart solver
+    [P, fval, flagg, outpt, allmins] = run(ms, problem, allpts);
+end
 
 % P is the vector with the estimated parameters
 
+% Initialize the options for the ODE solver (if any specific options needed, define here)
 options = [];
 
-IC=vars.initial;
-
-if params.fixI0==1
-    IC(vars.fit_index)=I0;
+% Set initial conditions based on params.fixI0 flag
+IC = vars.initial;
+if params.fixI0 == 1
+    IC(vars.fit_index) = I0;  % Fix the initial conditions to I0 for specified indices
 else
-    IC(vars.fit_index)=P(params.num+1);
+    % If not fixed, use parameter values following the first 'num' parameters
+    IC(vars.fit_index) = P(params.num + 1 : params.num + length(I0));
 end
 
-[~,F]=ode15s(model.fc,timevect,IC,options,P,params.extra0);
-F1=F;
+% Solve the differential equations using ode15s
+[~, F] = ode15s(model.fc, timevect, IC, options, P, params.extra0);
+F1 = F;  % Store the result in F1 (seems redundant unless F1 is used differently not shown here)
 
-if vars.fit_diff==1
-    fitcurve=abs([F(1,vars.fit_index);diff(F(:,vars.fit_index))]);
-else
-    fitcurve=F(:,vars.fit_index);
-end
+% Initialize variables for fitting the data
+yfit = zeros(length(ydata), 1);
+currentEnd = 0;
 
-residual=fitcurve-ydata;
-
-%fitcurve=residual+data1(:,2);
-
-if forecastingperiod<1
-
-    forecastcurve=residual+data1(:,2);
-    timevect2=timevect;
-    F2=F1;
-
-else
-    timevect2=(data1(1,1):data1(end,1)+forecastingperiod)*DT;
-
-    [~,F]=ode15s(model.fc,timevect2,IC,options,P,params.extra0);
-    F2=F;
-
-    if vars.fit_diff==1
-        forecastcurve=abs([F(1,vars.fit_index);diff(F(:,vars.fit_index))]);
+% Loop through each variable index to be fitted
+for j = 1:length(vars.fit_index)
+    % Check if differentiation is needed
+    if vars.fit_diff(j) == 1
+        % Compute absolute value of the derivative of the model output
+        fitcurve = abs([F(1, vars.fit_index(j)); diff(F(:, vars.fit_index(j)))]);
     else
-        forecastcurve=F(:,vars.fit_index);
+        % Use the model output directly
+        fitcurve = F(:, vars.fit_index(j));
     end
 
+    % Aggregate the fit results
+    yfit(currentEnd + 1 : currentEnd + length(fitcurve)) = fitcurve;
+    currentEnd = currentEnd + length(fitcurve);
 end
+
+% Final aggregated fit curve
+fitcurve = yfit;
+
+% 
+% figure
+% subplot(1,2,1)
+% plot(ydata,'ko')
+% hold on
+% plot(fitcurve,'r')
+
+
+% Calculate residuals
+residual = fitcurve - ydata;
+
+% Decide action based on forecasting period
+if forecastingperiod < 1
+    % If no extended forecasting is needed, adjust curve based on residuals
+    forecastcurve = residual + ydata;
+    timevect2 = timevect;  % Use the original time vector
+    F2 = F1;               % Reuse the previously calculated ODE results
+else
+    % Define the extended time vector for forecasting
+    timevect2 = data1(1,1) : DT : (data1(end,1) + forecastingperiod * DT);
+
+    % Solve the ODE to get new results over the extended time period
+    [~, F2] = ode15s(model.fc, timevect2, IC, options, P, params.extra0);
+
+    % Initialize forecast storage based on the number of fit indices and time points
+    yforecast = zeros(length(vars.fit_index) * length(timevect2), 1);
+    currentEnd = 0;
+
+    % Process each variable index specified for fitting
+    for j = 1:length(vars.fit_index)
+        % Determine if the variable requires differencing
+        if vars.fit_diff(j) == 1
+            % Calculate the absolute derivative of the forecast
+            forecastcurve = abs([F2(1, vars.fit_index(j)); diff(F2(:, vars.fit_index(j)))]);
+        else
+            % Use the ODE output directly for the forecast
+            forecastcurve = F2(:, vars.fit_index(j));
+        end
+
+        % Store the processed forecast in the yforecast array
+        yforecast(currentEnd + 1 : currentEnd + length(forecastcurve)) = forecastcurve;
+        currentEnd = currentEnd + length(forecastcurve);
+    end
+
+    % Assign the compiled forecast data as the final forecast curve
+    forecastcurve = yforecast;
+end
+
+
+% subplot(1,2,2)
+% plot(forecastcurve,'r')
+

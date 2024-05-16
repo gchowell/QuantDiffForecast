@@ -27,18 +27,51 @@ for real=1:M
                 lambda=abs(yi(t)-yi(t-1));
                 yirData(t,1)=poissrnd(lambda,1,1);
             end
-            
+
         case 2
+
             % Negative binomial dist with VAR=factor*mean1;
+
+            eps=0.001;
             for t=2:length(yi)
                 lambda=abs(yi(t)-yi(t-1));
                 mean1=lambda;
+                if mean1==0
+                 mean1=eps;
+                end
+
                 var1=mean1*factor1;
                 p1=mean1/var1;
                 r1=mean1*p1/(1-p1);
                 yirData(t,1)=nbinrnd(r1,p1,1,1);
+
             end
-            
+
+            % Quasi Poisson distribution
+
+%             eps=0.001;
+%             for t=2:length(yi)
+%                 lambda=abs(yi(t)-yi(t-1)); % Mean of the Poisson distribution
+%                 phi = factor1;    % Dispersion parameter (> 1 for overdispersion)
+% 
+%                 if lambda==0
+%                     lambda=eps;
+%                 end
+% 
+%                 % Step 1: Generate Gamma distributed random effects
+%                 % The shape parameter of the Gamma distribution is 1/phi
+%                 % The scale parameter is lambda*phi
+%                 gamma_shape = 1 / phi;
+%                 gamma_scale = lambda * phi;
+% 
+%                 gamma_samples = gamrnd(gamma_shape, gamma_scale, 1, 1);
+% 
+%                 % Step 2: Generate Poisson samples with the adjusted mean
+%                 yirData(t,1) = poissrnd(gamma_samples);
+% 
+%             end
+
+
         case 3
             % Negative binomial dist with parameter VAR= MEAN + alpha*MEAN
             for t=2:length(yi)
@@ -81,3 +114,4 @@ for real=1:M
     curves=[curves yirData];
     
 end
+

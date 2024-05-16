@@ -1,4 +1,4 @@
-function [AICcs,composite12,fit_model1,forecast_model12,Ys]=Run_Fit_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass)
+function   [AICcs,performanceC,forecast_model1,forecast_model12,data1,datalatest,Ys]=Run_Fit_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass)
 
 % <============================================================================>
 % < Author: Gerardo Chowell  ==================================================>
@@ -33,6 +33,7 @@ end
 params_INP.num=length(params_INP.label); % number of model parameters
 
 vars_INP.num=length(vars_INP.label); % number of variables comprising the ODE model
+
 
 % <============================================================================>
 % <================================ Datasets properties ==============================>
@@ -71,8 +72,6 @@ end
 numstartpoints=numstartpoints_INP; % Number of initial guesses for optimization procedure using MultiStart
 
 M=M_INP; % number of bootstrap realizations to characterize parameter uncertainty
-
-
 % <==============================================================================>
 % <============================== ODE model =====================================>
 % <==============================================================================>
@@ -84,6 +83,7 @@ vars=vars_INP;
 for j=1:params.num
     if params.initial(j)<params.LB(j) | params.initial(j)>params.UB(j)
         error('values in <params.initial> should lie within their parameter bounds defined by <params.LB> and <params.UB> ')
+        return
     end
 end
 
@@ -98,6 +98,17 @@ end
 
 data=load(strcat('./input/',cadfilename1,'.txt'));
 
+if isempty(data)
+    error('The dataset is empty')
+end
+
+if (length(vars.fit_index) == length(vars.fit_diff) && length(vars.fit_diff)== length(data(1,2:end)))==0
+
+    error('The number of state variables in the data file should be consistent with the dimensions of <vars.fit_index> and <vars.fit_diff>')
+
+end
+
+
 % <==============================================================================>
 % <========================== Forecasting parameters ===================================>
 % <==============================================================================>
@@ -105,6 +116,7 @@ data=load(strcat('./input/',cadfilename1,'.txt'));
 getperformance=1; % flag or indicator variable (1/0) to calculate forecasting performance or not
 
 forecastingperiod=0; %forecast horizon (number of data points ahead)
+
 
 % <==================================================================================>
 % <========================== Parameters of the rolling window analysis =========================>
@@ -127,6 +139,7 @@ else
 
 end
 
+
 if exist('windowsize1_pass','var')==1 & isempty(windowsize1_pass)==0
 
     windowsize1=windowsize1_pass;
@@ -136,19 +149,24 @@ end
 
 printscreen1=printscreen1_INP;
 
-
 % <===========================================================================================================>
 % <====== Check that the number of estimated parameters is smaller than the number of data points= ===========>
 % <===========================================================================================================>
 
-numparams=get_nparams(method1,dist1,sum(params.fixed==0),params.fixI0);
+numparams=get_nparams(method1,dist1,sum(params.fixed==0),length(vars.fit_index).*(params.fixI0==0));
 
 numparams
-windowsize1
+windowsize1*length(vars.fit_index)
 
-if numparams>=windowsize1
+if numparams>=windowsize1*length(vars.fit_index)
 
-    error("Number of estimated parameters should be smaller than the calibration period. Consider increasing the length of the calibration period.")
+    error("Number of estimated parameters should be smaller than the number of data points. Consider increasing the length of the calibration period.")
+
+end
+
+if tend1<tstart1
+
+    error("tstart1 parameter should not exceed tend1")
 
 end
 
@@ -157,15 +175,16 @@ end
 % ============================ Rolling window analysis=====================================>
 % <==================================================================================>
 
-param_estims=zeros(params.num+3,3,length(tstart1:1:tend1)); % median, 95% CI: LB, UB
+param_estims=zeros(params.num+length(vars.fit_index)+2,3,length(tstart1:1:tend1)); % median, 95% CI: LB, UB
 
 if method1==3 | method1==4
-    MCEs=zeros(length(tstart1:1:tend1),params.num+2); % if method1==3 | method1==4
+    MCEs=zeros(length(tstart1:1:tend1),params.num+length(vars.fit_index)+1); % if method1==3 | method1==4
 elseif method1==5
-   MCEs=zeros(length(tstart1:1:tend1),params.num+3); 
+    MCEs=zeros(length(tstart1:1:tend1),params.num+length(vars.fit_index)+2);
 else
-    MCEs=zeros(length(tstart1:1:tend1),params.num+1); 
+    MCEs=zeros(length(tstart1:1:tend1),params.num+length(vars.fit_index));
 end
+
 
 RMSECSS=[];
 MSECSS=[];
@@ -186,41 +205,39 @@ quantilesfs=[];
 
 if (tend1+windowsize1-1) > length(data(:,1))
 
-    tend1= length(data(:,1))-windowsize1+1;
+    tend1= length(data(:,1))-windowsize1+1
     'adjusting tend1'
 
 end
 
 AICcs=[];
-
-cc1=1;
 paramss=[];
-
 composite12=[];
 
-for i=tstart1:1:tend1  %rolling window analysis
+cc1=1;
 
-    if printscreen1
-        figure(100+i)
-    end
+for i=tstart1:1:tend1  %rolling window analysis
 
     t_window=i:1:i+windowsize1-1;
 
     %calibration data
-    datac=data(t_window,2);
+    datac=data(t_window,2:end);
     timevect1=DT*data(t_window,1);
 
     % calibration and future data
-    data_all=data(i:end,2);
+    data_all=data(i:end,2:end);
     timevect_all=DT*data(i:end,1);
 
     % first data point cannot be zero
-    if datac(1)==0
+    if datac(1,1)==0
         i
-        warning('first data point in the time series cannot be zero')
+        warning('first data point in the time series is zero')
+
     end
 
-    I0=datac(1);
+    ydata=datac(:);
+
+    I0=datac(1,:);
 
     data1=[data(t_window,1) datac];
 
@@ -230,22 +247,12 @@ for i=tstart1:1:tend1  %rolling window analysis
         params0=[params.initial vars.initial(vars.fit_index) 1 1];
     end
 
-    [P_model1d,residual_model1, fitcurve_model1d, forecastcurve_model1, timevect2, initialguess,fval, F1,F2]=fit_model(data1,params0,numstartpoints,DT,model,params,vars,0);
 
+    [P_model1d,residual_model1, fitcurve_model1d, forecastcurve_model1, timevect2, initialguess,fval]=fit_model(data1,params0,numstartpoints,DT,model,params,vars,0);
 
-    %     plot(timevect1,data1(:,2),'ko')
-    %     hold on
-    %     plot(timevect1, fitcurve_model1d,'r--')
-    %
-    %     xlabel('Time')
-    %     ylabel('Cases')
-    %     pause
-
-
-    [AICc,part1,part2,numparams]=getAICc(method1,dist1,sum(params.fixed==0),params.fixI0,fval,length(data1(:,1)));
+    [AICc,part1,part2,numparams]=getAICc(method1,dist1,sum(params.fixed==0),length(vars.fit_index).*(params.fixI0==0),fval,length(ydata))
 
     AICcs=[AICcs;[i AICc part1 part2 numparams]];
-
 
     if (method1==0 & dist1==1)
 
@@ -253,22 +260,50 @@ for i=tstart1:1:tend1  %rolling window analysis
 
     elseif (method1==0 & dist1==2)  % estimate <factor1> which is the variance to mean ratio to scale the NB error structure
 
-        binsize1=7;
+        % Quasi Poisson distribution
 
-        [ratios,~]=getMeanVarianceRatio(data1,binsize1,2);
+%         index1=find(fitcurve_model1d==0);
+% 
+%         eps=0.001;
+%         if isempty(index1) % add a small constant to avoid zero predictions
+% 
+%             factor1 = (1 / (length(fitcurve_model1d) - numparams)) * ...
+%                 sum(((fitcurve_model1d - ydata).^2) ./ fitcurve_model1d);
+% 
+%         else
+% 
+%             factor1 = (1 / (length(fitcurve_model1d) - numparams)) * ...
+%                 sum((((fitcurve_model1d+eps) - ydata).^2) ./ (fitcurve_model1d+eps));
+% 
+%         end
 
-        index1=find(ratios(:,1)>0);
 
-        factor1=mean(ratios(index1,1));
+        % Negative binomial dist with VAR=factor*mean1;
 
-        if factor1<1
-            dist1=1;
-            factor1=1;
-        end
+                binsize1=7;
+        
+                if length(ydata)<binsize1*3
+                    binsize1=round(binsize1/2);
+        
+                end
+        
+                [ratios,~]=getMeanVarianceRatio(ydata,binsize1,1);
+        
+                index1=find(ratios(:,1)>0);
+        
+                factor1=mean(ratios(index1,1));
+        
+                if factor1<1
+                    dist1=1;
+                    factor1=1;
+                end
 
     elseif method1==0 & dist1==0 % normal distribution of the error structure
 
-        var1=sum((fitcurve_model1d-datac).^2)./(length(fitcurve_model1d)-numparams); % last revised: 01 June 2022
+        size(fitcurve_model1d)
+        size(ydata)
+
+        var1=sum((fitcurve_model1d-ydata).^2)./(length(fitcurve_model1d)-numparams); % last revised: 01 June 2022
         factor1=sqrt(var1);
 
     elseif method1==1
@@ -278,21 +313,21 @@ for i=tstart1:1:tend1  %rolling window analysis
     elseif method1==3
 
         dist1=3;
-        alpha=P_model1d(params.num+2); % VAR=mean+alpha*mean;
+        alpha=P_model1d(params.num+length(vars.fit_index)+1); % VAR=mean+alpha*mean;
         factor1=alpha;
 
     elseif method1==4
 
         dist1=4;
-        alpha=P_model1d(params.num+2); % VAR=mean+alpha*mean^2;
+        alpha=P_model1d(params.num+length(vars.fit_index)+1); % VAR=mean+alpha*mean^2;
         factor1=alpha;
 
     elseif method1==5
 
         dist1=5;
 
-        alpha=P_model1d(params.num+2); % VAR=mean+alpha*mean^d;
-        d=P_model1d(params.num+3);
+        alpha=P_model1d(params.num+length(vars.fit_index)+1); % VAR=mean+alpha*mean^d;
+        d=P_model1d(params.num+length(vars.fit_index)+2);
 
         factor1=alpha;
 
@@ -303,40 +338,44 @@ for i=tstart1:1:tend1  %rolling window analysis
     % <======= Derive parameter uncertainty of the best fitting models and save results ================================>
     % <===========================================================================================>
 
+    'bootstrapping..'
+
     fit_model1=[];
     forecast_model1=[];
     forecast_model12=[];
 
-    Phatss_model1=zeros(M,params.num+3);
+    Phatss_model1=zeros(M,params.num+length(vars.fit_index)+2);
 
     f_model1_sims=[];
 
     for j=1:M
 
+        
         f_model1_sim=AddErrorStructure(cumsum(fitcurve_model1d),1,dist1,factor1,d);
 
         f_model1_sims=[f_model1_sims f_model1_sim];
 
 
         % Fit model1 to bootstrap data
-        data1=[timevect1 f_model1_sim];
+        %data1=[timevect1 f_model1_sim];
+
+        data1=[timevect1 reshape(f_model1_sim,length(t_window),length(vars.fit_index))];
+
+        data1(1,2:1+length(vars.fit_index))=I0;
+
 
         %params0=initialParams(data1(:,2),flag1);
         params0=P_model1d;
 
-        [P_model1,residual_model1 fitcurve_model1 forecastcurve_model1 timevect2,initialguess,fval, F1,F2]=fit_model(data1,params0,2,DT,model,params,vars,forecastingperiod);
+        [P_model1,residual_model1, fitcurve_model1, forecastcurve_model1, timevect2,initialguess,fval, F1,F2]=fit_model(data1,params0,2,DT,model,params,vars,forecastingperiod);
 
         fit_model1=[fit_model1 fitcurve_model1];
+
+        forecast_model1=[forecast_model1 forecastcurve_model1];
 
         for i2=1:vars.num
             Ys(i2,j)={F2(:,i2)};
         end
-
-
-        %P_model1
-        %pause
-
-        forecast_model1=[forecast_model1 forecastcurve_model1];
 
         if method1==0 & dist1==0
 
@@ -350,22 +389,53 @@ for i=tstart1:1:tend1  %rolling window analysis
 
         Phatss_model1(j,:)=P_model1;
 
+
     end %end bootstrapping loop
 
-    data1=[timevect1 data1(:,2)];
+    data1=[timevect1 data1(:,2:end)];
 
-    datalatest=data(i:end,1:2);
+    datalatest=data(i:end,1:end);
+
+    'bootstrapping completed'
 
 
     % <==================================================================================================>
     % <========== Get forecast performance metrics for the model (if getperformance=1) =====================================>
     % <==================================================================================================>
 
-    if getperformance
+    currentEnd1=0;
+    currentEnd2=0;
 
-        [RMSECS_model1 MSECS_model1 MAECS_model1  PICS_model1 MISCS_model1 RMSEFS_model1 MSEFS_model1 MAEFS_model1 PIFS_model1 MISFS_model1]=computeforecastperformance(data1,datalatest,forecast_model1,forecast_model12,forecastingperiod);
+    for j=1:length(vars.fit_index)
 
-        [WISC_model1,WISFS_model1]=computeWIS(data1,datalatest,forecast_model12,forecastingperiod)
+        RMSECSS=[];
+        MSECSS=[];
+        MAECSS=[];
+        PICSS=[];
+        MISCSS=[];
+        RMSEFSS=[];
+        MSEFSS=[];
+        MAEFSS=[];
+        PIFSS=[];
+        MISFSS=[];
+
+        WISCSS=[];
+        WISFSS=[];
+
+        quantilescs=[];
+        quantilesfs=[];
+
+
+        fit1=fit_model1(currentEnd1 + 1 : currentEnd1 + length(data1(:,1)),:);
+
+        forecast1=forecast_model1(currentEnd2 + 1 : currentEnd2+ length(data1(:,1))+forecastingperiod,:);
+
+        forecast2=forecast_model12(currentEnd2+ 1 : currentEnd2 + length(data1(:,1))+forecastingperiod,:);
+
+
+        [RMSECS_model1, MSECS_model1, MAECS_model1,  PICS_model1, MISCS_model1, RMSEFS_model1, MSEFS_model1, MAEFS_model1, PIFS_model1, MISFS_model1]=computeforecastperformance(data1(:,[1 j+1]),datalatest(:,[1 j+1]),forecast1,forecast2,forecastingperiod);
+
+        [WISC_model1,WISFS_model1]=computeWIS(data1(:,[1 j+1]),datalatest(:,[1 j+1]),forecast2,forecastingperiod)
 
         % store metrics for calibration
         RMSECSS=[RMSECSS;[RMSECS_model1(end,end)]];
@@ -377,7 +447,7 @@ for i=tstart1:1:tend1  %rolling window analysis
         WISCSS=[WISCSS;[WISC_model1(end,end)]];
 
         % store metrics for short-term forecasts
-        if forecastingperiod>0
+        if forecastingperiod>0 && isempty(RMSEFS_model1)==0
 
             RMSEFSS=[RMSEFSS;[RMSEFS_model1(end,end)]];
             MSEFSS=[MSEFSS;[MSEFS_model1(end,end)]];
@@ -389,20 +459,128 @@ for i=tstart1:1:tend1  %rolling window analysis
 
         end
 
-    end
+        % <========================================================================================>
+        % <========================================================================================>
+        % <========================== Save csv file with calibration performance metrics ============================>
+        % <========================================================================================>
+        % <========================================================================================>
 
-    % <==================================================================================================>
-    % <========== Compute quantiles of the calibration and forecasting periods and store ================>
-    % <==================================================================================================>
+        performanceC=[i zeros(length(MAECSS(:,1)),1)+windowsize1 MAECSS(:,1)  MSECSS(:,1) PICSS(:,1) WISCSS(:,1)];
 
-    [quantilesc,quantilesf]=computeQuantiles(data1,forecast_model12,forecastingperiod);
+        T = array2table(performanceC);
+        T.Properties.VariableNames(1:6) = {'time','calibration_period','MAE','MSE','Coverage 95%PI','WIS'};
+        writetable(T,strcat('./output/performance-calibration-model_name-',model.name,'-vars.fit_index-',num2str(vars.fit_index(j)),'-tstart-',num2str(i),'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
 
-    quantilescs=[quantilescs;quantilesc];
+
+        % <========================================================================================>
+        % <================================ Plot model fit and forecast ======================================>
+        % <========================================================================================>
+
+        % Plot results
+
+        UB1 = max(quantile(forecast2', 0.975)', 0);
+        LB1 = max(quantile(forecast2', 0.025)', 0);
+
+        median1=median(forecast2,2);
+
+        figure(100+i*20+j)
+
+        if printscreen1
+            %subplot(2,params.num,[params.num+1:1:params.num*2])
+
+            plot(timevect2,forecast2,'c')
+            hold on
+
+            % plot 95% PI
+
+            line1=plot(timevect2,median1,'r-')
+            set(line1,'LineWidth',2)
+
+            hold on
+            line1=plot(timevect2,LB1,'r--')
+            set(line1,'LineWidth',2)
+
+            line1=plot(timevect2,UB1,'r--')
+            set(line1,'LineWidth',2)
+
+            % plot model fit
+
+            color1=gray(8);
+            line1=plot(timevect1,fit1,'color',color1(6,:))
+            set(line1,'LineWidth',1)
+
+            line1=plot(timevect2,median1,'r-')
+            set(line1,'LineWidth',2)
+
+            % plot the data
+
+            line1=plot(timevect_all,data_all(:,j),'bo')
+            set(line1,'LineWidth',2)
+
+            line2=[timevect1(end) 0;timevect1(end) max(quantile(forecast2',0.975))*1.5];
+
+            if forecastingperiod>0
+                line1=plot(line2(:,1),line2(:,2),'k--')
+                set(line1,'LineWidth',2)
+            end
+
+   
+            axis([timevect1(1) timevect2(end) 0 max(quantile(forecast2',0.975))*1.5+1])
+
+            xlabel('Time')
+
+            cad2=strcat('(',caddisease,{' '},datatype,')');
+
+            if vars.fit_diff(j)
+                ylabel(strcat(vars.label(vars.fit_index(j)),'''(t)',{' '},cad2))
+            else
+                ylabel(strcat(vars.label(vars.fit_index(j)),'(t)',{' '},cad2))
+            end
+
+            set(gca,'FontSize',GetAdjustedFontSize)
+            set(gcf,'color','white')
+
+            title(model.name)
+        end
+
+        % <=========================================================================================>
+        % <================================ Save short-term forecast results ==================================>
+        % <=========================================================================================>
+
+        save(strcat('./output/Forecast-ODEModel-',cadfilename1,'-model_name-',model.name,'-vars.fit_index-',num2str(vars.fit_index(j)),'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(i),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-forecastingperiod-',num2str(forecastingperiod),'.mat'),'-mat')
+
+        if length(data_all)>=windowsize1+forecastingperiod
+            forecastdata=[timevect_all(1:length(timevect1)+forecastingperiod) data_all(1:length(timevect1)+forecastingperiod,j) median1 LB1 UB1];
+        else
+            forecastdata=[[timevect_all(1:end);zeros(windowsize1+forecastingperiod-length(data_all(:,j)),1)+NaN] [data_all(1:end,j);zeros(windowsize1+forecastingperiod-length(data_all(:,j)),1)+NaN] median1 LB1 UB1];
+        end
+
+        T = array2table(forecastdata);
+        T.Properties.VariableNames(1:5) = {'time','data','median','LB','UB'};
+        writetable(T,strcat('./output/Forecast-model_name-',model.name,'-vars.fit_index-',num2str(vars.fit_index(j)),'-tstart-',num2str(i),'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
+
+
+
+        % <==================================================================================================>
+        % <========== Compute quantiles of the calibration and forecasting periods and store ======================================>
+        % <==================================================================================================>
+
+        [quantilesc,quantilesf]=computeQuantiles(data1(:,[1 j+1]),forecast2(:,j),forecastingperiod);
+
+        quantilescs=[quantilescs;quantilesc];
+
+        quantilesfs=[quantilesfs;quantilesf];
+
+
+        currentEnd1 = currentEnd1 + length(data1(:,1));
+
+        currentEnd2 = currentEnd2 + length(data1(:,1))+forecastingperiod;
+
+    end % end for vars.fit_index
 
     % <========================================================================================>
     % <================================ Parameter estimates =========================================>
     % <========================================================================================>
-
 
     % estimate median and 95% CI from distribution of parameter estimates
 
@@ -414,57 +592,48 @@ for i=tstart1:1:tend1  %rolling window analysis
 
     end
 
-    param_estims(params.num+1,1:3,cc1) = [median(Phatss_model1(:,params.num+1)) quantile(Phatss_model1(:,params.num+1),0.025) quantile(Phatss_model1(:,params.num+1),0.975)]; %X0
-    param_estims(params.num+2,1:3,cc1) = [median(Phatss_model1(:,params.num+2)) quantile(Phatss_model1(:,params.num+2),0.025) quantile(Phatss_model1(:,params.num+2),0.975)]; %alpha
-    param_estims(params.num+3,1:3,cc1) = [median(Phatss_model1(:,params.num+3)) quantile(Phatss_model1(:,params.num+3),0.025) quantile(Phatss_model1(:,params.num+3),0.975)]; %d
+    for j=1:length(vars.fit_index)
 
+        param_estims(params.num+j,1:3,cc1) = [median(Phatss_model1(:,params.num+j)) quantile(Phatss_model1(:,params.num+j),0.025) quantile(Phatss_model1(:,params.num+j),0.975)];
 
-    MCEs(cc1,params.num+1)=std(Phatss_model1(:,params.num+1))/sqrt(M); %X0
+        MCEs(cc1,params.num+j)=std(Phatss_model1(:,params.num+j))/sqrt(M); %X0
+
+    end
+
+    param_estims(params.num+j+1,1:3,cc1) = [median(Phatss_model1(:,params.num+j+1)) quantile(Phatss_model1(:,params.num+j+1),0.025) quantile(Phatss_model1(:,params.num+j+1),0.975)];
+    param_estims(params.num+j+2,1:3,cc1) = [median(Phatss_model1(:,params.num+j+2)) quantile(Phatss_model1(:,params.num+j+2),0.025) quantile(Phatss_model1(:,params.num+j+2),0.975)];
+
     if method1==3 | method1==4
-        MCEs(cc1,params.num+2)=std(Phatss_model1(:,params.num+2))/sqrt(M); %alpha
+        MCEs(cc1,params.num+j+1)=std(Phatss_model1(:,params.num+j+1))/sqrt(M); %alpha
     elseif method1==5
-        MCEs(cc1,params.num+2)=std(Phatss_model1(:,params.num+2))/sqrt(M); %alpha
-        MCEs(cc1,params.num+3)=std(Phatss_model1(:,params.num+3))/sqrt(M); %d
+        MCEs(cc1,params.num+j+1)=std(Phatss_model1(:,params.num+j+1))/sqrt(M); %alpha
+        MCEs(cc1,params.num+j+2)=std(Phatss_model1(:,params.num+j+2))/sqrt(M); %d
     end
 
 
     if isempty(params.composite)==0
-
         compositetemp=params.composite(Phatss_model1);
-
         composite12=[composite12;[median(compositetemp) quantile(compositetemp,0.025) quantile(compositetemp,0.975)]]
-
     else
-
         composite12=[composite12;[NaN NaN NaN]]
-
     end
 
-    % Plot results
-
-    LB1=quantile(forecast_model12',0.025)';
-    LB1=(LB1>=0).*LB1;
-
-    UB1=quantile(forecast_model12',0.975)';
-    UB1=(UB1>=0).*UB1;
-
-    median1=median(forecast_model12,2);
-
-
     % <========================================================================================>
-    % <======================= Plot empirical distributions of the parameters ========================>
+    % <======================= Plot empirical distributions of the parameters ================================>
     % <========================================================================================>
+
 
     if printscreen1
-        figure(100+i)
+        figure(300+i*20+j)
     end
+
     params1=[];
-    paramslabels1=cell(1,(params.num+1)*3);
+    paramslabels1=cell(1,(params.num)*3);
 
     for j=1:params.num
 
         if printscreen1
-            subplot(2,params.num,j)
+            subplot(1,params.num,j)
             hist(Phatss_model1(:,j))
             hold on
         end
@@ -489,98 +658,34 @@ for i=tstart1:1:tend1  %rolling window analysis
 
         if printscreen1
             ylabel('Frequency')
+
             title(cad1)
 
-            set(gca,'FontSize', 24);
+            set(gca,'FontSize', GetAdjustedFontSize);
             set(gcf,'color','white')
         end
 
     end
 
-    params1=[params1 param_estims(j+1,1,cc1)  param_estims(j+1,2,cc1) param_estims(j+1,3,cc1) ];
-    paramslabels1(1+j*3:(j+1)*3)={strcat('X0'), strcat('X0_95%CI LB'), strcat('X0_95%CI UB')};
+    for j2=j:1:j+length(vars.fit_index)-1
+
+        params1=[params1 param_estims(j2+1,1,cc1)  param_estims(j2+1,2,cc1) param_estims(j2+1,3,cc1) ];
+        paramslabels1(1+(j2)*3:(j2+1)*3)={strcat('X0(',num2str(vars.fit_index(j2-j+1)),')'), strcat('X0(',num2str(vars.fit_index(j2-j+1)),')','95%CI LB'), strcat('X0(',num2str(vars.fit_index(j2-j+1)),')','95%CI UB')};
+
+    end
 
     if method1==3 | method1==4
-        params1=[params1 param_estims(j+2,1,cc1)  param_estims(j+2,2,cc1) param_estims(j+2,3,cc1) ];
-        paramslabels1(1+(j+1)*3:(j+2)*3)={strcat('alpha'), strcat('alpha_95%CI LB'), strcat('alpha_95%CI UB')};
+        params1=[params1 param_estims(j+1+length(vars.fit_index),1,cc1)  param_estims(j+1+length(vars.fit_index),2,cc1) param_estims(j+1+length(vars.fit_index),3,cc1) ];
+        paramslabels1(1+(j+length(vars.fit_index))*3:(j+1+length(vars.fit_index))*3)={strcat('alpha'), strcat('alpha_95%CI LB'), strcat('alpha_95%CI UB')};
 
     elseif method1==5
-        params1=[params1 param_estims(j+2,1,cc1)  param_estims(j+2,2,cc1) param_estims(j+2,3,cc1) ];
-        paramslabels1(1+(j+1)*3:(j+2)*3)={strcat('alpha'), strcat('alpha_95%CI LB'), strcat('alpha_95%CI UB')};
+        params1=[params1 param_estims(j+1+length(vars.fit_index),1,cc1)  param_estims(j+1+length(vars.fit_index),2,cc1) param_estims(j+1+length(vars.fit_index),3,cc1) ];
+        paramslabels1(1+(j+length(vars.fit_index))*3:(j+1+length(vars.fit_index))*3)={strcat('alpha'), strcat('alpha_95%CI LB'), strcat('alpha_95%CI UB')};
 
-        params1=[params1 param_estims(j+3,1,cc1)  param_estims(j+3,2,cc1) param_estims(j+3,3,cc1) ];
-        paramslabels1(1+(j+2)*3:(j+3)*3)={strcat('d'), strcat('d_95%CI LB'), strcat('d_95%CI UB')};
+        params1=[params1 param_estims(j+2+length(vars.fit_index),1,cc1)  param_estims(j+2+length(vars.fit_index),2,cc1) param_estims(j+2+length(vars.fit_index),3,cc1) ];
+        paramslabels1(1+(j+1+length(vars.fit_index))*3:(j+2+length(vars.fit_index))*3)={strcat('d'), strcat('d_95%CI LB'), strcat('d_95%CI UB')};
     end
 
-
-    % <========================================================================================>
-    % <================================ Plot model fit and forecast ======================================>
-    % <========================================================================================>
-
-    if printscreen1
-        subplot(2,params.num,[params.num+1:1:params.num*2])
-
-        plot(timevect2,forecast_model12,'c')
-        hold on
-
-        % plot 95% PI
-
-        line1=plot(timevect2,median1,'r-')
-        set(line1,'LineWidth',2)
-
-        hold on
-        line1=plot(timevect2,LB1,'r--')
-        set(line1,'LineWidth',2)
-
-        line1=plot(timevect2,UB1,'r--')
-        set(line1,'LineWidth',2)
-
-        % plot model fit
-
-        color1=gray(8);
-        line1=plot(timevect1,fit_model1,'color',color1(6,:))
-        set(line1,'LineWidth',1)
-
-        line1=plot(timevect2,median1,'r-')
-        set(line1,'LineWidth',2)
-
-        % plot the data
-
-        line1=plot(timevect_all,data_all,'bo')
-        set(line1,'LineWidth',2)
-
-        line2=[timevect1(end) 0;timevect1(end) max(quantile(forecast_model12',0.975))*1.5];
-
-        if forecastingperiod>0
-            line1=plot(line2(:,1),line2(:,2),'k--')
-            set(line1,'LineWidth',2)
-        end
-
-        axis([timevect1(1) timevect2(end) 0 max(quantile(forecast_model12',0.975))*1.5])
-
-        xlabel('Time')
-
-        cad2=strcat('(',caddisease,{' '},datatype,')');
-
-        if vars.fit_diff
-            ylabel(strcat(vars.label(vars.fit_index),'''(t)',{' '},cad2))
-        else
-            ylabel(strcat(vars.label(vars.fit_index),'(t)',{' '},cad2))
-        end
-
-
-        set(gca,'FontSize',24)
-        set(gcf,'color','white')
-
-        title(model.name)
-    end
-
-
-    % <=========================================================================================>
-    % <================================ Save results ===========================================>
-    % <=========================================================================================>
-
-    save(strcat('./output/Forecast-ODEModel-',cadfilename1,'-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(i),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-forecastingperiod-',num2str(forecastingperiod),'.mat'),'-mat')
 
     cc1=cc1+1;
 
@@ -591,9 +696,9 @@ end % rolling window analysis
 
 %% plot all state variables in a figure
 
-if vars.num>1 & printscreen1
+if vars.num>1
 
-    figure(200)
+    figure(400)
 
     factor1=factor(vars.num);
 
@@ -606,6 +711,7 @@ if vars.num>1 & printscreen1
     end
 
     cc1=1;
+
     for i2=1:1:vars.num
 
         subplot(rows1,cols1,cc1)
@@ -617,7 +723,7 @@ if vars.num>1 & printscreen1
         %end
 
         title(vars.label(i2))
-        set(gca,'FontSize', 24);
+        set(gca,'FontSize', GetAdjustedFontSize);
         set(gcf,'color','white')
 
         cc1=cc1+1;
@@ -625,11 +731,9 @@ if vars.num>1 & printscreen1
     end
 
     for j=1:1:cols1
-
         subplot(rows1,cols1,rows1*cols1-cols1+j)
         xlabel('Time')
     end
-
 end
 
 %%
@@ -637,27 +741,23 @@ end
 %save model parameters from tstart1 to tend1
 save(strcat('./output/parameters-ODEModel-',cadfilename1,'-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-forecastingperiod-',num2str(forecastingperiod),'.mat'), 'param_estims','-mat')
 
-%save calibration performance metrics from tstart1 to tend1 (AICc, MSE,
-%MAE, coverage 95% PI, MIS, WIS)
-save(strcat('./output/performanceCalibration-ODEModel-',cadfilename1,'-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-forecastingperiod-',num2str(forecastingperiod),'.mat'),'AICcs','RMSECSS', 'MSECSS', 'MAECSS', 'PICSS','MISCSS','WISCSS','-mat')
-
-%save quantiles of the model fits from tstart1 to tend1
-save(strcat('./output/QuantilesCalibration-ODEModel-',cadfilename1,'-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-forecastingperiod-',num2str(forecastingperiod),'.mat'),'quantilescs','-mat')
-
 % <=============================================================================================>
 % <================= Save csv file with parameters from rolling window analysis ====================================>
 % <=============================================================================================>
 
 rollparams=[(tstart1:1:tend1)' paramss];
 
+rollparams
+paramslabels1
+
 T = array2table(rollparams);
 T.Properties.VariableNames(1)={'time'};
 if method1==3 | method1==4  %save parameter alpha. VAR=mean+alpha*mean; VAR=mean+alpha*mean^2;
-    T.Properties.VariableNames(2:(params.num+2)*3+1) = paramslabels1;
+    T.Properties.VariableNames(2:(params.num+1+length(vars.fit_index))*3+1) = paramslabels1;
 elseif method1==5   % save parameters alpha and d. VAR=mean+alpha*mean^d;
-    T.Properties.VariableNames(2:(params.num+3)*3+1) = paramslabels1;
+    T.Properties.VariableNames(2:(params.num+2+length(vars.fit_index))*3+1) = paramslabels1;
 else
-    T.Properties.VariableNames(2:(params.num+1)*3+1) = paramslabels1;
+    T.Properties.VariableNames(2:(params.num+length(vars.fit_index))*3+1) = paramslabels1;
 end
 
 writetable(T,strcat('./output/parameters-rollingwindow-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
@@ -672,13 +772,11 @@ T = array2table(rollparams);
 T.Properties.VariableNames(1)={'time'};
 
 if method1==3 | method1==4  %save parameter alpha. VAR=mean+alpha*mean; VAR=mean+alpha*mean^2;
-    T.Properties.VariableNames(2:(params.num+2)+1) = paramslabels1(1:3:end);
-    T=T(:,1:end-1);
+    T.Properties.VariableNames(2:(params.num+1+length(vars.fit_index))+1) = paramslabels1(1:3:end);
 elseif method1==5   % save parameters alpha and d. VAR=mean+alpha*mean^d;
-    T.Properties.VariableNames(2:(params.num+3)+1) =  paramslabels1(1:3:end);
+    T.Properties.VariableNames(2:(params.num+2+length(vars.fit_index))+1) =  paramslabels1(1:3:end);
 else
-    T.Properties.VariableNames(2:(params.num+1)+1) =  paramslabels1(1:3:end);
-    T=T(:,1:end-2);
+    T.Properties.VariableNames(2:(params.num+length(vars.fit_index))+1) =  paramslabels1(1:3:end);
 end
 
 writetable(T,strcat('./output/MCSEs-rollingwindow-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
@@ -691,9 +789,8 @@ composite12=[(tstart1:1:tend1)' composite12];
 
 T = array2table(composite12);
 T.Properties.VariableNames(1)={'time'};
-T.Properties.VariableNames(2:4) = {'composite mean','composite 95% CI LB','composite 95% CI UB'};
+T.Properties.VariableNames(2:4) = {'composite median','composite 95% CI LB','composite 95% CI UB'};
 writetable(T,strcat('./output/parameters-composite-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
-
 
 % <=====================================================================================================>
 % <============================== Save file with AIC metrics ===========================================>
@@ -704,18 +801,4 @@ writetable(T,strcat('./output/parameters-composite-model_name-',model.name,'-fix
 T = array2table(AICcs);
 T.Properties.VariableNames(1:5) = {'time','AICc','AICc part1','AICc part2','numparams'};
 writetable(T,strcat('./output/AICc-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
-
-
-% <========================================================================================>
-% <========================================================================================>
-% <========================== Save csv file with calibration performance metrics ============================>
-% <========================================================================================>
-% <========================================================================================>
-
-performanceC=[(tstart1:1:tend1)' zeros(length(MAECSS(:,1)),1)+windowsize1 MAECSS(:,end)  MSECSS(:,end) PICSS(:,end) WISCSS(:,end)];
-
-T = array2table(performanceC);
-T.Properties.VariableNames(1:6) = {'time','calibration_period','MAE','MSE','Coverage 95%PI','WIS'};
-writetable(T,strcat('./output/performance-calibration-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
-
 
