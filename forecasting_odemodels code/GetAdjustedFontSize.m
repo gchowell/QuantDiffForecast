@@ -13,4 +13,4 @@ baseDPI = 96;
 scalingFactor = screenDPI / baseDPI;
 
 % Calculate adjusted font size
-adjustedFontSize = baseFontSize * scalingFactor;
+adjustedFontSize = min(baseFontSize * scalingFactor,24);
