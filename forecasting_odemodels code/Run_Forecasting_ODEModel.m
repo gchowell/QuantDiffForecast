@@ -794,6 +794,10 @@ if vars.num>1
 
     factor1=factor(vars.num);
 
+     if length(factor1)>2
+        factor1=[factor1(1) factor1(2)*factor1(3)];
+     end
+     
     if length(factor1)==1
         rows1=1;
         cols1=factor1;

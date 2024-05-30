@@ -536,6 +536,10 @@ if vars.num>1
 
     factor1=factor(vars.num);
 
+    if length(factor1)>2
+        factor1=[factor1(1) factor1(2)*factor1(3)];
+    end
+
     if length(factor1)==1
         rows1=1;
         cols1=factor1;
@@ -547,7 +551,7 @@ if vars.num>1
     cc1=1;
 
     for i2=1:1:vars.num
-        
+
         subplot(rows1,cols1,cc1)
         %for j=1:M
         plot(quantile(cell2mat(Ys(i2,:,:))',0.5),'k-')

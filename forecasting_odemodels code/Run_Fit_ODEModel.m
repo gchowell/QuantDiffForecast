@@ -260,43 +260,26 @@ for i=tstart1:1:tend1  %rolling window analysis
 
     elseif (method1==0 & dist1==2)  % estimate <factor1> which is the variance to mean ratio to scale the NB error structure
 
-        % Quasi Poisson distribution
-
-%         index1=find(fitcurve_model1d==0);
-% 
-%         eps=0.001;
-%         if isempty(index1) % add a small constant to avoid zero predictions
-% 
-%             factor1 = (1 / (length(fitcurve_model1d) - numparams)) * ...
-%                 sum(((fitcurve_model1d - ydata).^2) ./ fitcurve_model1d);
-% 
-%         else
-% 
-%             factor1 = (1 / (length(fitcurve_model1d) - numparams)) * ...
-%                 sum((((fitcurve_model1d+eps) - ydata).^2) ./ (fitcurve_model1d+eps));
-% 
-%         end
-
 
         % Negative binomial dist with VAR=factor*mean1;
 
-                binsize1=7;
-        
-                if length(ydata)<binsize1*3
-                    binsize1=round(binsize1/2);
-        
-                end
-        
-                [ratios,~]=getMeanVarianceRatio(ydata,binsize1,1);
-        
-                index1=find(ratios(:,1)>0);
-        
-                factor1=mean(ratios(index1,1));
-        
-                if factor1<1
-                    dist1=1;
-                    factor1=1;
-                end
+        binsize1=7;
+
+        if length(ydata)<binsize1*3
+            binsize1=round(binsize1/2);
+
+        end
+
+        [ratios,~]=getMeanVarianceRatio(ydata,binsize1,2);
+
+        index1=find(ratios(:,1)>0);
+
+        factor1=mean(ratios(index1,1));
+
+        if factor1<1
+            dist1=1;
+            factor1=1;
+        end
 
     elseif method1==0 & dist1==0 % normal distribution of the error structure
 
@@ -700,6 +683,10 @@ if vars.num>1
     figure(400)
 
     factor1=factor(vars.num);
+
+    if length(factor1)>2
+        factor1=[factor1(1) factor1(2)*factor1(3)];
+    end
 
     if length(factor1)==1
         rows1=1;
