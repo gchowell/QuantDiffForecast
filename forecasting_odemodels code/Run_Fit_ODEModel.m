@@ -733,8 +733,8 @@ save(strcat('./output/parameters-ODEModel-',cadfilename1,'-model_name-',model.na
 
 rollparams=[(tstart1:1:tend1)' paramss];
 
-rollparams
-paramslabels1
+%rollparams
+%paramslabels1
 
 T = array2table(rollparams);
 T.Properties.VariableNames(1)={'time'};
