@@ -1,5 +1,6 @@
-# QuantDiffForecast
-Parameter estimation, forecasting, and uncertainty quantification for ODE models
+# QuantDiffForecast: A MATLAB Toolbox for Parameter Estimation and Forecasting with ODE Models
+
+Welcome to **QuantDiffForecast**, a MATLAB toolbox designed to estimate parameters and generate short-term forecasts with quantified uncertainty from dynamical models based on **ordinary differential equations (ODEs)**. This toolbox is user-friendly, flexible, and suitable for applications across various scientific fields, including epidemiology and population dynamics.
 
 <p> QuantDiffForecast Tutorial: https://onlinelibrary.wiley.com/doi/full/10.1002/sim.10036 </p>
 <p>Video tutorial: https://www.youtube.com/watch?v=eyyX63H12sY&t=41s</p>
