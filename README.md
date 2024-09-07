@@ -39,7 +39,7 @@ The simplest example provided in this repository is an SEIR (Susceptible-Exposed
 
 For a step-by-step guide and a detailed tutorial on how to use this toolbox, please refer to our paper:
 
-**Chowell G., Bleichrodt A., Luo R. (2024)**: "Parameter Estimation and Forecasting with Quantified Uncertainty for ODE Models using QuantDiffForecast: A MATLAB Toolbox and Tutorial" [Link to Paper]
+**Chowell G., Bleichrodt A., Luo R. (2024)**: "Parameter Estimation and Forecasting with Quantified Uncertainty for ODE Models using QuantDiffForecast: A MATLAB Toolbox and Tutorial" [https://onlinelibrary.wiley.com/doi/full/10.1002/sim.10036]
 
 Additionally, a **YouTube tutorial** demonstrating the functionality of the toolbox is available [here](https://www.youtube.com/watch?v=eyyX63H12sY).
 
