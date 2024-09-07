@@ -5,22 +5,63 @@ Welcome to **QuantDiffForecast**, a MATLAB toolbox designed to estimate paramete
 <p> QuantDiffForecast Tutorial: https://onlinelibrary.wiley.com/doi/full/10.1002/sim.10036 </p>
 <p>Video tutorial: https://www.youtube.com/watch?v=eyyX63H12sY&t=41s</p>
 
-<p> It carries out the following tasks: </p> 
-<ul>
-<li> fitting ODE models to a single or multiple time series,</li>
-<li> estimation of model parameters with quantified uncertainty, Monte Carlo standard errors (MCSES),</li>
-<li>	plotting the best fit of the ODE model, calibration performance metrics, and empirical distribution of the parameters </li>
-<li> plotting forecasts from the best-fit model and performance metrics of the forecasts,</li>
-<li> conducts rolling window analyses of parameter estimates for specific periods and window sizes</li>
+## Features
 
-</ul>
+- **Parameter estimation**: Provides methods for parameter estimation using nonlinear least squares (NLS) and maximum likelihood estimation (MLE), with support for Poisson, negative binomial, and normal error structures.
+- **Forecasting with quantified uncertainty**: Generates forecasts using parametric bootstrapping to provide uncertainty quantification and prediction intervals.
+- **Flexible model input**: Users can define their own ODE models and parameter ranges, supported by customizable input files.
+- **Rolling window analysis**: Evaluate parameter stability and forecast performance over time.
+- **Illustrative examples**: Includes built-in examples such as epidemic models applied to the 1918 influenza pandemic.
 
-  Additional features include:
+## Getting Started
 
-<ul>
-  
-<li>fitting models using different parameter estimation approaches (least-squares, maximum likelihood estimation),</li>
-<li>fitting models using assuming different error structures (normal, Poisson, negative binomial),</li>
-<li>User can conduct multiple fits of the model to the data through a rolling window analysis </li>
+To get started, you'll need to create a `.txt` file containing your time-series data. Place this file in the `input` folder, and then specify the ODE model and related parameters in the MATLAB `.m` files. 
 
-</ul>
+### Example: SEIR Model for Epidemics
+
+The simplest example provided in this repository is an SEIR (Susceptible-Exposed-Infectious-Removed) model, applied to data from the 1918 influenza pandemic in San Francisco.
+
+1. Specify the SEIR model parameters in `options_fit.m` and `options_forecast.m`.
+2. Use the provided script `Run_Fit_ODEModel.m` to estimate parameters and fit the model to data:
+
+   ```matlab
+   Run_Fit_ODEModel(@options_fit_SEIR_flu1918,1,1,17)
+   ```
+
+3. Visualize the fit and generate forecasts using:
+
+   ```matlab
+   plotFit_ODEModel(@options_fit_SEIR_flu1918,1,1,17)
+   Run_Forecasting_ODEModel(@options_forecast_SEIR_flu1918,1,1,17,10)
+   ```
+
+## Functions Overview
+
+| Function                     | Description                                                                                            |
+|------------------------------|--------------------------------------------------------------------------------------------------------|
+| `options_fit.m`               | Specifies model fitting parameters, error structures, and calibration periods.                         |
+| `options_forecast.m`          | Specifies forecasting parameters, including forecasting periods and performance metrics.               |
+| `plotODEModel.m`              | Plots ODE model solutions based on the model parameters and initial conditions provided by the user.    |
+| `Run_Fit_ODEModel.m`          | Fits the ODE model to data with quantified uncertainty.                                                |
+| `plotFit_ODEModel.m`          | Displays model fit, empirical parameter distributions, and calibration performance metrics.            |
+| `Run_Forecasting_ODEModel.m`  | Generates a model-based forecast with quantified uncertainty and performance metrics.                  |
+
+## Rolling Window Analysis
+
+The toolbox supports **rolling window analysis** to assess the stability of parameter estimates and forecast performance over time. You can customize the rolling window size, start time, and end time in the `options_fit.m` or `options_forecast.m` files.
+
+## Tutorial and Documentation
+
+For a step-by-step guide and a detailed tutorial on how to use this toolbox, please refer to our paper:
+
+**Chowell G., Bleichrodt A., Luo R. (2024)**: "Parameter Estimation and Forecasting with Quantified Uncertainty for ODE Models using QuantDiffForecast: A MATLAB Toolbox and Tutorial" [Link to Paper]
+
+Additionally, a **YouTube tutorial** demonstrating the functionality of the toolbox is available [here](https://www.youtube.com/watch?v=eyyX63H12sY).
+
+## License
+
+This project is licensed under the terms of the Creative Commons Attribution-NonCommercial-NoDerivs License. See [LICENSE](LICENSE) for more details.
+
+## Contact
+
+For questions or support, please contact **Gerardo Chowell** at [gchowell@gsu.edu](mailto:gchowell@gsu.edu).
