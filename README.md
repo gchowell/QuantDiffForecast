@@ -34,22 +34,7 @@ The simplest example provided in this repository is an SEIR (Susceptible-Exposed
    plotFit_ODEModel(@options_fit_SEIR_flu1918,1,1,17)
    Run_Forecasting_ODEModel(@options_forecast_SEIR_flu1918,1,1,17,10)
    ```
-
-## Functions Overview
-
-| Function                     | Description                                                                                            |
-|------------------------------|--------------------------------------------------------------------------------------------------------|
-| `options_fit.m`               | Specifies model fitting parameters, error structures, and calibration periods.                         |
-| `options_forecast.m`          | Specifies forecasting parameters, including forecasting periods and performance metrics.               |
-| `plotODEModel.m`              | Plots ODE model solutions based on the model parameters and initial conditions provided by the user.    |
-| `Run_Fit_ODEModel.m`          | Fits the ODE model to data with quantified uncertainty.                                                |
-| `plotFit_ODEModel.m`          | Displays model fit, empirical parameter distributions, and calibration performance metrics.            |
-| `Run_Forecasting_ODEModel.m`  | Generates a model-based forecast with quantified uncertainty and performance metrics.                  |
-
-## Rolling Window Analysis
-
-The toolbox supports **rolling window analysis** to assess the stability of parameter estimates and forecast performance over time. You can customize the rolling window size, start time, and end time in the `options_fit.m` or `options_forecast.m` files.
-
+   
 ## Tutorial and Documentation
 
 For a step-by-step guide and a detailed tutorial on how to use this toolbox, please refer to our paper:
