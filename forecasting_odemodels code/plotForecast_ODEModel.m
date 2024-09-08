@@ -1,4 +1,4 @@
-function   [AICcs,performanceC,performanceF]=plotForecast_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass,forecastingperiod_pass)
+function   [AICcs,performanceC,performanceF,quantilescss,quantilesfss]=plotForecast_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass,forecastingperiod_pass)
 
 % <============================================================================>
 % < Author: Gerardo Chowell  ==================================================>
@@ -201,8 +201,8 @@ MISFSS=[];
 WISCSS=[];
 WISFSS=[];
 
-quantilescs=[];
-quantilesfs=[];
+quantilescss=[];
+quantilesfss=[];
 
 if (tend1+windowsize1-1) > length(data(:,1))
 
@@ -474,12 +474,11 @@ for i=tstart1:1:tend1  %rolling window analysis
         % <========== Compute quantiles of the calibration and forecasting periods and store ======================================>
         % <==================================================================================================>
 
-        [quantilesc,quantilesf]=computeQuantiles(data1(:,[1 j+1]),forecast2(:,j),forecastingperiod);
-
-        quantilescs=[quantilescs;quantilesc];
-
-        quantilesfs=[quantilesfs;quantilesf];
-
+        %[quantilesc,quantilesf]=computeQuantiles(data1(:,[1 j+1]),forecast2,forecastingperiod);
+       
+        quantilescss=[quantilescss;quantilesc];
+        quantilesfss=[quantilesfss;quantilesf];
+        
 
         currentEnd1 = currentEnd1 + length(data1(:,1));
 

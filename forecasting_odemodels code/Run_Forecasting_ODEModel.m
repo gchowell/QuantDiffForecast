@@ -623,8 +623,7 @@ for i=tstart1:1:tend1  %rolling window analysis
         % <================================ Save short-term forecast results ==================================>
         % <=========================================================================================>
 
-        save(strcat('./output/Forecast-ODEModel-',cadfilename1,'-model_name-',model.name,'-vars.fit_index-',num2str(vars.fit_index(j)),'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(i),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-forecastingperiod-',num2str(forecastingperiod),'.mat'),'-mat')
-
+  
 
         if getperformance && forecastingperiod>0 && (length(data_all)<(windowsize1+forecastingperiod))
 
@@ -657,11 +656,14 @@ for i=tstart1:1:tend1  %rolling window analysis
         % <========== Compute quantiles of the calibration and forecasting periods and store ======================================>
         % <==================================================================================================>
 
-        [quantilesc,quantilesf]=computeQuantiles(data1(:,[1 j+1]),forecast2(:,j),forecastingperiod);
+        [quantilesc,quantilesf]=computeQuantiles(data1(:,[1 j+1]),forecast2,forecastingperiod);
 
         quantilescs=[quantilescs;quantilesc];
 
         quantilesfs=[quantilesfs;quantilesf];
+
+         save(strcat('./output/Forecast-ODEModel-',cadfilename1,'-model_name-',model.name,'-vars.fit_index-',num2str(vars.fit_index(j)),'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(i),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-forecastingperiod-',num2str(forecastingperiod),'.mat'),'-mat')
+
 
 
         currentEnd1 = currentEnd1 + length(data1(:,1));
