@@ -1,4 +1,4 @@
-function   [AICcs,performanceC,data1]=plotFit_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass)
+function   [AICcs,performanceC,data1,quantilescss]=plotFit_ODEModel(options_pass,tstart1_pass,tend1_pass,windowsize1_pass)
 
 
 % <============================================================================>
@@ -186,8 +186,8 @@ MISFSS=[];
 WISCSS=[];
 WISFSS=[];
 
-quantilescs=[];
-quantilesfs=[];
+quantilescss=[];
+quantilesfss=[];
 
 if (tend1+windowsize1-1) > length(data(:,1))
 
@@ -267,7 +267,7 @@ for i=tstart1:1:tend1  %rolling window analysis
 
         T = array2table(performanceC);
         T.Properties.VariableNames(1:6) = {'time','calibration_period','MAE','MSE','Coverage 95%PI','WIS'};
-        writetable(T,strcat('./output/performance-calibration-model_name-',model.name,'-vars.fit_index-',num2str(vars.fit_index(j)),'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-0--',caddisease,'-',datatype,'.csv'))
+        writetable(T,strcat('./output/performance-calibration-model_name-',model.name,'-vars.fit_index-',num2str(vars.fit_index(j)),'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-0-',caddisease,'-',datatype,'.csv'))
 
 
 
@@ -364,11 +364,10 @@ for i=tstart1:1:tend1  %rolling window analysis
         % <========== Compute quantiles of the calibration and forecasting periods and store ======================================>
         % <==================================================================================================>
 
-        [quantilesc,quantilesf]=computeQuantiles(data1(:,[1 j+1]),forecast2(:,j),forecastingperiod);
+        %[quantilesc,quantilesf]=computeQuantiles(data1(:,[1 j+1]),forecast2(:,j),forecastingperiod);
 
-        quantilescs=[quantilescs;quantilesc];
-
-        quantilesfs=[quantilesfs;quantilesf];
+        quantilescss=[quantilescss;quantilesc];
+        quantilesfss=[quantilesfss;quantilesf];
 
 
         currentEnd1 = currentEnd1 + length(data1(:,1));
@@ -638,5 +637,5 @@ writetable(T,strcat('./output/parameters-composite-model_name-',model.name,'-fix
 
 T = array2table(AICcs);
 T.Properties.VariableNames(1:5) = {'time','AICc','AICc part1','AICc part2','numparams'};
-writetable(T,strcat('./output/AICc-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-0',caddisease,'-',datatype,'.csv'))
+writetable(T,strcat('./output/AICc-model_name-',model.name,'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-0-',caddisease,'-',datatype,'.csv'))
 
