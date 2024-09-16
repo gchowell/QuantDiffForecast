@@ -328,6 +328,13 @@ for i=tstart1:1:tend1  %rolling window analysis
 
         factor1=alpha;
 
+    elseif method1==6 % normal distribution of the error structure
+
+        dist1=6;
+
+        var1=sum((fitcurve_model1d-ydata).^2)./(length(fitcurve_model1d)-numparams); % last revised: 01 June 2022
+        factor1=sqrt(var1)/sqrt(2);
+
     end
 
 
@@ -373,7 +380,7 @@ for i=tstart1:1:tend1  %rolling window analysis
             Ys(i2,j)={F2(:,i2)};
         end
 
-        if method1==0 & (dist1==0 | dist1==2)
+        if (method1==0 & (dist1==0 | dist1==2)) | (method1==6 & dist1==6)
 
             forecast_model12=[forecast_model12 AddErrorStructure(cumsum(forecastcurve_model1),20,dist1,factor1,0)];
 
