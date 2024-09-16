@@ -21,7 +21,7 @@ elseif method1==5
 
     numparams=numparams+2;  % Neg. Binomial requires 2 more parameters (alpha,d)
 
-if method1==6  % Laplace distribution -- one parameter for scale
+elseif method1==6  % Laplace distribution -- one parameter for scale
 
     numparams=numparams+1;
 
