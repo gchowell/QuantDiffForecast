@@ -29,7 +29,7 @@ end
 
 % Set extended bounds based on the method specified
 switch method1
-    case {0, 1}
+    case {0, 1,6}
         % Cases 0 and 1 have no extension on bounds
         LBe = [0 0];
         UBe = [0 0];
