@@ -314,6 +314,13 @@ for i=tstart1:1:tend1  %rolling window analysis
 
         factor1=alpha;
 
+    elseif method1==6 % Laplace distribution of the error structure
+
+        dist1=6;
+
+        var1=sum((fitcurve_model1d-ydata).^2)./(length(fitcurve_model1d)-numparams); % last revised: 01 June 2022
+        factor1=sqrt(var1)/sqrt(2);  % scale parameter: b= sigma/sqrt(2);
+
     end
 
 

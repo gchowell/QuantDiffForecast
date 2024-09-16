@@ -2,25 +2,44 @@ function objfunction=parameterSearchODE(z)
 
 global model params vars method1 timevect ydata
 
-I0=z(params.num+1);
-alpha=z(params.num+2);
-d=z(params.num+3);
+numFitIndices = length(vars.fit_index);  % Cache the number of fitting indices for clarity and efficiency
 
-IC=vars.initial;
+I0=z(params.num+1:params.num+numFitIndices);
+alpha=z(params.num+numFitIndices+1);
+d=z(params.num+numFitIndices+2);
 
-IC(vars.fit_index)=I0;
 
-[~,x]=ode15s(model.fc,timevect,IC,[],z,params.extra0);
+% Initialize initial conditions from predefined variables
+IC = vars.initial;
 
-%[t,x]=ode15s(@modifiedLogisticGrowth,timevect,IC,[],r,p,a,K,flag1);
+% Set specific initial conditions for indices specified in vars.fit_index
+IC(vars.fit_index) = I0;
 
-if vars.fit_diff==1
-    fitcurve=abs([x(1,vars.fit_index);diff(x(:,vars.fit_index))]);
-else
-    fitcurve=x(:,vars.fit_index);
+% Solve the ODE using ode15s; here 'model.fc' is the model function, 'timevect' is the time vector
+[~, x] = ode15s(model.fc, timevect, IC, [], z, params.extra0);
+
+% Initialize yfit array to store fit results
+yfit = zeros(length(ydata), 1);
+
+% Initialize an index to keep track of the end position in yfit
+currentEnd = 0;
+
+% Loop through each fit index to process the ODE solution
+for j = 1:length(vars.fit_index)
+    % Check if differentiation is needed based on vars.fit_diff
+    if vars.fit_diff(j) == 1
+        % Calculate the absolute derivative of the ODE solution for this variable
+        fitcurve = abs([x(1, vars.fit_index(j)); diff(x(:, vars.fit_index(j)))]);
+    else
+        % Use the ODE solution directly
+        fitcurve = x(:, vars.fit_index(j));
+    end
+
+    % Append the fitcurve to the yfit array, updating currentEnd to the new position
+    yfit(currentEnd + 1 : currentEnd + length(fitcurve)) = fitcurve;
+    currentEnd = currentEnd + length(fitcurve);
 end
 
-yfit=fitcurve;
 
 eps=0.001;
 
@@ -45,10 +64,12 @@ else
 
             %objfunction= -1*((-length(ydata)/2)*log(2*pi)-(length(ydata)/2)*log(SSE/length(ydata))-length(ydata)/2);
 
+
             objfunction=sum((ydata-yfit).^2);
 
 
-        case 1 %MLE Poisson (negative log-likelihood)
+
+        case 1 % MLE for Poisson distribution (negative log-likelihood)
 
 
             %             sum1=0;
@@ -94,7 +115,7 @@ else
 
                 end
 
-               %sum1=sum1+ydata(i)*log(alpha*yfit(i))-(ydata(i)+(1/alpha))*log(1+alpha*yfit(i))-sum(log(2:1:ydata(i)));
+                %sum1=sum1+ydata(i)*log(alpha*yfit(i))-(ydata(i)+(1/alpha))*log(1+alpha*yfit(i))-sum(log(2:1:ydata(i)));
                 sum1=sum1+ydata(i)*log(alpha*yfit(i))-(ydata(i)+(1/alpha))*log(1+alpha*yfit(i));
 
             end
@@ -114,16 +135,17 @@ else
                 end
 
                 %sum1=sum1+ydata(i)*log(alpha*(yfit(i).^(d-1)))-(ydata(i)+(1/alpha)*yfit(i).^(2-d))*log(1+alpha*(yfit(i).^(d-1)))-sum(log(2:1:ydata(i)));
-                 sum1=sum1+ydata(i)*log(alpha*(yfit(i).^(d-2)).*yfit(i))-(ydata(i)+(1/alpha)*yfit(i).^(2-d))*log(1+alpha*(yfit(i).^(d-2)).*yfit(i));
+                sum1=sum1+ydata(i)*log(alpha*(yfit(i).^(d-2)).*yfit(i))-(ydata(i)+(1/alpha)*yfit(i).^(2-d))*log(1+alpha*(yfit(i).^(d-2)).*yfit(i));
 
             end
 
             objfunction=-sum1;
 
+        case 6
+
+           objfunction=sum(abs(ydata-yfit));
+
+
     end
 
-
-    %         if ~isreal(objfunction)
-    %             dbstop
-    %         end
 end
