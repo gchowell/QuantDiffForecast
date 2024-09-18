@@ -369,6 +369,17 @@ for i=tstart1:1:tend1  %rolling window analysis
         quantilescss=[quantilescss;quantilesc];
         quantilesfss=[quantilesfss;quantilesf];
 
+        % Label for quantile forecast 
+        quantNamesRanked = {'Q_0.010', 'Q_0.025', 'Q_0.050', 'Q_0.100', 'Q_0.150', 'Q_0.200', 'Q_0.250', 'Q_0.300', 'Q_0.350', 'Q_0.400', 'Q_0.450', 'Q_0.500', 'Q_0.550', 'Q_0.600', 'Q_0.650', 'Q_0.700', 'Q_0.750', 'Q_0.800', 'Q_0.850', 'Q_0.900', 'Q_0.950', 'Q_0.975', 'Q_0.990'};
+        
+        % Creating the combined quantile array and changing to table 
+        combinedQuantiles = [quantilesc; quantilesf];
+        combinedQuantilesTable = array2table(combinedQuantiles, 'VariableNames', quantNamesRanked);
+        
+        % Exporting the quantile forecast file 
+        writetable(combinedQuantilesTable,strcat('./output/quantile-model_name-',model.name,'-vars.fit_index-',num2str(vars.fit_index(j)),'-tstart-',num2str(i),'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-0-',caddisease,'-',datatype,'.csv'))
+        
+
 
         currentEnd1 = currentEnd1 + length(data1(:,1));
 
