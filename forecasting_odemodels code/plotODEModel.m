@@ -96,6 +96,13 @@ printscreen1=printscreen1_INP;
 % <======================== Load epidemic data ========================================>
 % <==============================================================================>
 
+% Check if fileName ends with '.txt'
+if ~endsWith(cadfilename1, '.txt', 'IgnoreCase', true)
+    % Append '.txt' extension if not present
+    cadfilename1 = strcat(cadfilename1, '.txt');
+end
+
+
 if isfile(strcat('./input/',cadfilename1,'.txt'))
     % File exists.
     data=load(strcat('./input/',cadfilename1,'.txt'));
@@ -300,6 +307,7 @@ end
 
 
 if 0
+
     % <===============================================================================================================>
     % <=========================== Generate simulated data with a given error structure ===============================>
     % <================================================================================================================>
@@ -316,9 +324,13 @@ if 0
     figure
 
     M=1;
-    %dist1=0; factor1=5; %Normal error structure
-    dist1=1;
-    factor1=1;
+
+     %dist1=0; factor1=4; %Normal error structure
+
+     dist1=6; factor1=20; %Laplace error structure
+    
+     %dist1=1;
+    %factor1=1;
 
     d=1;
 
@@ -343,7 +355,6 @@ if 0
 
     curves=[timevect curves]
 
-    save(strcat('./input/curve-',model_INP.name,'-',cad1,'M-',num2str(M),'-dist1-',num2str(dist1),'-factor1-',num2str(factor1),'.txt'),'curves','-ascii')
+    save(strcat('./input/curve-',model.name,'-M-',num2str(M),'-dist1-',num2str(dist1),'-factor1-',num2str(factor1),'.txt'),'curves','-ascii')
 
 end
-
