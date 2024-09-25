@@ -2,7 +2,7 @@
 % < Author: Gerardo Chowell  ==================================================>
 % <============================================================================>
 
-function dx=GLM(t,x,params0)
+function dx=GLM(t,x,params0,extra0)
 
 % params0(1)=r, params0(2)=p, params0(3)=K 
 
