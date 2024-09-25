@@ -2,7 +2,7 @@
 % < Author: Gerardo Chowell  ==================================================>
 % <============================================================================>
 
-function dx=EXP(t,x,params0)
+function dx=EXP(t,x,params0,extra0)
 
 % parameters in order: r
 

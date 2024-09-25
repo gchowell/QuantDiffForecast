@@ -2,7 +2,7 @@
 % < Author: Gerardo Chowell  ==================================================>
 % <============================================================================>
 
-function dx=GGM(t,x,params0)
+function dx=GGM(t,x,params0,extra0)
 
 % parameters in order: r, p
 
