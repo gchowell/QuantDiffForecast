@@ -307,17 +307,17 @@ for i=tstart1:1:tend1  %rolling window analysis
         % <========================================================================================>
         % <========================================================================================>
 
-        performanceF=[];
-
-        if getperformance && forecastingperiod>0 && isempty(length(MAEFSS))==0
-
-            performanceF=[i zeros(length(MAEFSS(:,1)),1)+forecastingperiod MAEFSS(:,1)  MSEFSS(:,1) PIFSS(:,1) WISFSS(:,1)];
-
-            T = array2table(performanceF);
-            T.Properties.VariableNames(1:6) = {'time','Horizon','MAE','MSE','Coverage 95%PI','WIS'};
-            writetable(T,strcat('./output/performance-forecasting-model_name-',model.name,'-vars.fit_index-',num2str(vars.fit_index(j)),'-tstart-',num2str(i),'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
-
-        end
+        % performanceF=[];
+        % 
+        % if getperformance && forecastingperiod>0 && isempty(length(MAEFSS))==0
+        % 
+        %     performanceF=[i zeros(length(MAEFSS(:,1)),1)+forecastingperiod MAEFSS(:,1)  MSEFSS(:,1) PIFSS(:,1) WISFSS(:,1)];
+        % 
+        %     T = array2table(performanceF);
+        %     T.Properties.VariableNames(1:6) = {'time','Horizon','MAE','MSE','Coverage 95%PI','WIS'};
+        %     writetable(T,strcat('./output/performance-forecasting-model_name-',model.name,'-vars.fit_index-',num2str(vars.fit_index(j)),'-tstart-',num2str(i),'-fixI0-',num2str(params.fixI0),'-method-',num2str(method1),'-dist-',num2str(dist1),'-tstart-',num2str(tstart1),'-tend-',num2str(tend1),'-calibrationperiod-',num2str(windowsize1),'-horizon-',num2str(forecastingperiod),'-',caddisease,'-',datatype,'.csv'))
+        % 
+        % end
 
 
         % <========================================================================================>
