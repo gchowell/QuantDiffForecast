@@ -7,7 +7,7 @@ Welcome to **QuantDiffForecast**, a MATLAB toolbox designed to estimate paramete
 
 ## Features
 
-- **Parameter estimation**: Provides methods for parameter estimation using nonlinear least squares (NLS) and maximum likelihood estimation (MLE), with support for Poisson, negative binomial, and normal error structures.
+- **Parameter estimation**: Provides methods for parameter estimation using nonlinear least squares (NLS) and maximum likelihood estimation (MLE), with support for Poisson, negative binomial, and normal error structures. The modeler can fit a model to one or multiple time series.
 - **Forecasting with quantified uncertainty**: Generates forecasts using parametric bootstrapping to provide uncertainty quantification and prediction intervals.
 - **Flexible model input**: Users can define their own ODE models and parameter ranges, supported by customizable input files.
 - **Rolling window analysis**: Evaluate parameter stability and forecast performance over time.
