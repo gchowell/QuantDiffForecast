@@ -310,7 +310,9 @@ else
 end
 
 starts = [S1; S2; z0];
-starts = unique(round(starts,6), 'rows');
+
+% Remove exact duplicate rows without changing parameter values.
+starts = unique(starts, 'rows', 'stable');
 
 % Keep rows inside bounds & finite
 inB = all(starts >= (LB - 1e-12) & starts <= (UB + 1e-12), 2);
