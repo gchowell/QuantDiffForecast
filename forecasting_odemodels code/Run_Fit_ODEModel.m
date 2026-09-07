@@ -105,6 +105,11 @@ end
 basePath = fileparts(mfilename('fullpath'));
 fullFilePath = fullfile(basePath, 'input', cadfilename1);
 
+outputDir = fullfile(basePath,'output');
+if ~isfolder(outputDir)
+    mkdir(outputDir);
+end
+
 
 % Check if the file exists before attempting to load
 if isfile(fullFilePath)
